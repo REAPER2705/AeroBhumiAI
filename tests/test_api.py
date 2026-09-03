@@ -1,8 +1,10 @@
 """API endpoint tests.
 
 Test coverage:
-- Build check endpoint with various inputs
-- Error handling
+- Health endpoints
+- Parcel listing endpoint
+- Parcel detail endpoint
+- Parcel error handling
 - Response structure validation
 """
 
@@ -22,17 +24,163 @@ client = TestClient(app)
 
 
 class TestHealthEndpoint:
-    """Test health check endpoint."""
+    """Test health check endpoints."""
     
     def test_health_check(self):
-        """Test health check returns 200."""
+        """Test /health returns 200."""
         response = client.get("/health")
         assert response.status_code == 200
         assert response.json()["status"] == "healthy"
+    
+    def test_api_health_check(self):
+        """Test /api/health returns 200."""
+        response = client.get("/api/health")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert data["status"] == "healthy"
+
+
+class TestParcelListEndpoint:
+    """Test GET /api/parcels endpoint."""
+    
+    def test_list_parcels_returns_200(self):
+        """Test list parcels returns 200."""
+        response = client.get("/api/parcels")
+        assert response.status_code == 200
+    
+    def test_list_parcels_response_structure(self):
+        """Test list parcels response has correct structure."""
+        response = client.get("/api/parcels")
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Check response structure
+        assert "success" in data
+        assert "parcels" in data
+        assert data["success"] is True
+        assert isinstance(data["parcels"], list)
+    
+    def test_list_parcels_contains_demo_parcel(self):
+        """Test list parcels contains demo parcel P-001."""
+        response = client.get("/api/parcels")
+        assert response.status_code == 200
+        data = response.json()
+        
+        parcel_ids = [p["parcel_id"] for p in data["parcels"]]
+        assert "P-001" in parcel_ids
+    
+    def test_list_parcels_parcel_structure(self):
+        """Test each parcel in list has required fields."""
+        response = client.get("/api/parcels")
+        assert response.status_code == 200
+        data = response.json()
+        
+        for parcel in data["parcels"]:
+            assert "parcel_id" in parcel
+            assert "boundary_status" in parcel
+            assert "source" in parcel
+            assert "geometry" in parcel
+            assert parcel["source"] == "DEMO_CADASTRAL_DATA"
+            assert parcel["boundary_status"] == "REFERENCE_ONLY"
+    
+    def test_list_parcels_geometry_valid(self):
+        """Test parcel geometry is valid."""
+        response = client.get("/api/parcels")
+        assert response.status_code == 200
+        data = response.json()
+        
+        for parcel in data["parcels"]:
+            geometry = parcel["geometry"]
+            assert geometry["type"] in ["Polygon", "MultiPolygon"]
+            assert "coordinates" in geometry
+            assert len(geometry["coordinates"]) > 0
+
+
+class TestParcelDetailEndpoint:
+    """Test GET /api/parcels/{parcel_id} endpoint."""
+    
+    def test_get_existing_parcel_returns_200(self):
+        """Test get existing parcel returns 200."""
+        response = client.get("/api/parcels/P-001")
+        assert response.status_code == 200
+    
+    def test_get_existing_parcel_response_structure(self):
+        """Test get parcel response has correct structure."""
+        response = client.get("/api/parcels/P-001")
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Check response structure
+        assert "success" in data
+        assert "parcel" in data
+        assert data["success"] is True
+    
+    def test_get_existing_parcel_contains_data(self):
+        """Test get parcel returns correct parcel data."""
+        response = client.get("/api/parcels/P-001")
+        assert response.status_code == 200
+        data = response.json()
+        
+        parcel = data["parcel"]
+        assert parcel["parcel_id"] == "P-001"
+        assert parcel["boundary_status"] == "REFERENCE_ONLY"
+        assert parcel["source"] == "DEMO_CADASTRAL_DATA"
+    
+    def test_get_existing_parcel_has_geometry(self):
+        """Test get parcel includes valid geometry."""
+        response = client.get("/api/parcels/P-001")
+        assert response.status_code == 200
+        data = response.json()
+        
+        parcel = data["parcel"]
+        assert "geometry" in parcel
+        geometry = parcel["geometry"]
+        assert geometry["type"] == "Polygon"
+        assert "coordinates" in geometry
+        assert len(geometry["coordinates"]) > 0
+    
+    def test_get_existing_parcel_has_area(self):
+        """Test get parcel includes area."""
+        response = client.get("/api/parcels/P-001")
+        assert response.status_code == 200
+        data = response.json()
+        
+        parcel = data["parcel"]
+        assert "area" in parcel
+        assert parcel["area"] is not None
+        assert parcel["area"] > 0
+    
+    def test_get_nonexistent_parcel_returns_404(self):
+        """Test get nonexistent parcel returns 404."""
+        response = client.get("/api/parcels/P-NONEXISTENT")
+        assert response.status_code == 404
+    
+    def test_get_nonexistent_parcel_error_structure(self):
+        """Test 404 response has correct error structure."""
+        response = client.get("/api/parcels/P-NONEXISTENT")
+        assert response.status_code == 404
+        data = response.json()
+        
+        # Check error structure
+        assert "detail" in data
+        assert "code" in data["detail"]
+        assert "message" in data["detail"]
+        assert data["detail"]["code"] == "PARCEL_NOT_FOUND"
+    
+    def test_get_another_demo_parcel(self):
+        """Test get another demo parcel P-002."""
+        response = client.get("/api/parcels/P-002")
+        assert response.status_code == 200
+        data = response.json()
+        
+        parcel = data["parcel"]
+        assert parcel["parcel_id"] == "P-002"
+        assert parcel["area"] == 2000
 
 
 class TestBuildCheckEndpoint:
-    """Test spatial build-check endpoint."""
+    """Test spatial build-check endpoint (Stage 3)."""
     
     @pytest.fixture
     def parcel_id(self):
