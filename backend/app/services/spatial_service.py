@@ -1,204 +1,220 @@
-"""Spatial analysis service using GIS libraries.
+"""Spatial analysis service using Shapely + pyproj.
 
 Responsibilities (GIS Engine):
 - Polygon geometry validation and intersection
-- Area calculations for proposed buildings
-- Deterministic spatial comparisons
+- Area calculations for proposed buildings using real projected CRS
+- Deterministic spatial comparisons — no estimates, no guessing
 
-This MVP uses pure Python geometry calculations.
-Production version would use GeoPandas/Shapely for advanced CRS handling.
+All area calculations reproject from EPSG:4326 (lon/lat) to an
+auto-detected UTM zone (via pyproj) before computing geometry.
 """
 
 from typing import Dict, Tuple, Any
-import math
 
+from shapely.geometry import shape, Polygon
+from shapely.validation import explain_validity
+import pyproj
+
+
+# ---------------------------------------------------------------------------
+# Internal helpers
+# ---------------------------------------------------------------------------
+
+def _geojson_to_shapely(geometry: dict) -> Polygon:
+    """Convert a GeoJSON Polygon dict to a Shapely Polygon."""
+    return shape(geometry)
+
+
+def _auto_utm_crs(lon: float, lat: float) -> pyproj.CRS:
+    """Return the appropriate UTM CRS for a given lon/lat centroid.
+
+    Uses pyproj's built-in query so there is no hardcoded zone number.
+    """
+    utm_crs_list = pyproj.database.query_utm_crs_info(
+        datum_name="WGS 84",
+        area_of_interest=pyproj.aoi.AreaOfInterest(
+            west_lon_degree=lon,
+            south_lat_degree=lat,
+            east_lon_degree=lon,
+            north_lat_degree=lat,
+        ),
+    )
+    if not utm_crs_list:
+        raise ValueError(
+            f"Could not determine UTM zone for centroid ({lon:.4f}, {lat:.4f})"
+        )
+    return pyproj.CRS.from_authority(
+        utm_crs_list[0].auth_name, utm_crs_list[0].code
+    )
+
+
+def _reproject_polygon(polygon: Polygon, transformer: pyproj.Transformer) -> Polygon:
+    """Reproject a Shapely Polygon using a pyproj Transformer.
+
+    Handles exterior ring and any interior rings (holes).
+    Coordinates are in (lon, lat) / (x, y) order throughout.
+    """
+    def _transform_ring(coords):
+        xs, ys = zip(*coords)
+        new_xs, new_ys = transformer.transform(xs, ys)
+        return list(zip(new_xs, new_ys))
+
+    exterior = _transform_ring(polygon.exterior.coords)
+    interiors = [_transform_ring(ring.coords) for ring in polygon.interiors]
+    return Polygon(exterior, interiors)
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
 
 def validate_polygon_geometry(geometry: Dict[str, Any]) -> Tuple[bool, str]:
     """Validate polygon geometry structure and validity.
-    
+
+    Checks (in order):
+    1. Must be a dict
+    2. type must be 'Polygon'   — error contains "Polygon"
+    3. coordinates must exist and be a non-empty list
+    4. Outer ring must have >= 4 coordinate pairs
+    5. Outer ring must be closed (first == last) — error contains "closed"
+    6. Each coordinate must be [lon, lat] within valid bounds
+    7. Shapely validity check (catches self-intersections etc.)
+
     Returns:
-        (is_valid, error_message)
+        (is_valid: bool, error_message: str)
+        On success: (True, "")
     """
     if not isinstance(geometry, dict):
         return False, "Geometry must be a dictionary"
-    
-    if geometry.get('type') != 'Polygon':
+
+    if geometry.get("type") != "Polygon":
         return False, "Geometry must be a Polygon"
-    
-    coordinates = geometry.get('coordinates')
+
+    coordinates = geometry.get("coordinates")
     if not coordinates or not isinstance(coordinates, list):
         return False, "Polygon must have coordinates"
-    
+
     if len(coordinates) < 1:
         return False, "Polygon must have at least one ring"
-    
-    # Check that outer ring is closed
+
     outer_ring = coordinates[0]
     if len(outer_ring) < 4:
         return False, "Polygon ring must have at least 4 coordinates"
-    
+
     if outer_ring[0] != outer_ring[-1]:
         return False, "Polygon ring must be closed"
-    
-    # Validate coordinate structure
+
+    # Validate coordinate values
     try:
         for ring in coordinates:
             for coord in ring:
                 if not isinstance(coord, (list, tuple)) or len(coord) < 2:
                     return False, "Each coordinate must have [lon, lat]"
-                # Check reasonable bounds
                 lon, lat = coord[0], coord[1]
                 if not (-180 <= lon <= 180 and -90 <= lat <= 90):
                     return False, f"Invalid coordinate bounds: [{lon}, {lat}]"
     except Exception as e:
         return False, f"Coordinate validation failed: {str(e)}"
-    
+
+    # Shapely validity check (self-intersections, duplicate points, etc.)
+    try:
+        poly = _geojson_to_shapely(geometry)
+        if not poly.is_valid:
+            reason = explain_validity(poly)
+            return False, f"Polygon geometry is not valid: {reason}"
+    except Exception as e:
+        return False, f"Could not parse geometry: {str(e)}"
+
     return True, ""
 
 
-def point_in_polygon(point: Tuple[float, float], polygon_ring: list) -> bool:
-    """Check if a point is inside a polygon ring using ray casting algorithm."""
-    x, y = point
-    n = len(polygon_ring)
-    inside = False
-    
-    j = n - 1
-    for i in range(n):
-        xi, yi = polygon_ring[i][0], polygon_ring[i][1]
-        xj, yj = polygon_ring[j][0], polygon_ring[j][1]
-        
-        if ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi) + xi):
-            inside = not inside
-        j = i
-    
-    return inside
-
-
-def polygon_bounding_box(polygon_ring: list) -> Dict[str, float]:
-    """Calculate bounding box for a polygon ring."""
-    lons = [coord[0] for coord in polygon_ring]
-    lats = [coord[1] for coord in polygon_ring]
-    
-    return {
-        'min_lon': min(lons),
-        'max_lon': max(lons),
-        'min_lat': min(lats),
-        'max_lat': max(lats)
-    }
-
-
-def bounding_boxes_overlap(bbox1: Dict[str, float], bbox2: Dict[str, float]) -> bool:
-    """Check if two bounding boxes overlap."""
-    return (bbox1['min_lon'] <= bbox2['max_lon'] and 
-            bbox1['max_lon'] >= bbox2['min_lon'] and
-            bbox1['min_lat'] <= bbox2['max_lat'] and 
-            bbox1['max_lat'] >= bbox2['min_lat'])
-
-
-def calculate_ring_area(ring: list) -> float:
-    """Calculate area of a polygon ring using Shoelace formula.
-    
-    Returns area in square degrees.
-    """
-    if len(ring) < 3:
-        return 0
-    
-    area = 0
-    for i in range(len(ring) - 1):
-        x1, y1 = ring[i]
-        x2, y2 = ring[i + 1]
-        area += (x2 - x1) * (y2 + y1)
-    
-    return abs(area) / 2
-
-
-def convert_area_to_square_meters(area_degrees: float, latitude: float) -> float:
-    """Convert area in square degrees to approximate square meters.
-    
-    Uses simplified calculation valid for small areas near reference latitude.
-    """
-    if area_degrees <= 0:
-        return 0
-    
-    # At equator: 1 degree ≈ 111 km
-    # Adjustment for latitude
-    lat_rad = math.radians(latitude)
-    meters_per_degree_lat = 111000
-    meters_per_degree_lon = 111000 * math.cos(lat_rad)
-    
-    # Convert from degrees to meters
-    area_m2 = area_degrees * meters_per_degree_lat * meters_per_degree_lon
-    return area_m2
-
-
-def estimate_average_latitude(ring: list) -> float:
-    """Get average latitude for coordinate conversion."""
-    lats = [coord[1] for coord in ring]
-    return sum(lats) / len(lats) if lats else 0
-
-
-def polygons_intersect(parcel_ring: list, house_ring: list) -> bool:
-    """Check if two polygon rings intersect or overlap."""
-    parcel_bbox = polygon_bounding_box(parcel_ring)
-    house_bbox = polygon_bounding_box(house_ring)
-    
-    # Quick check: bounding boxes must overlap
-    if not bounding_boxes_overlap(parcel_bbox, house_bbox):
-        return False
-    
-    # Check if any house vertex is inside parcel
-    for vertex in house_ring:
-        if point_in_polygon(vertex, parcel_ring):
-            return True
-    
-    # Check if any parcel vertex is inside house
-    for vertex in parcel_ring:
-        if point_in_polygon(vertex, house_ring):
-            return True
-    
-    return False
-
-
 def calculate_metrics(parcel_geometry: dict, house_geometry: dict) -> dict:
-    """Calculate all spatial metrics for build check.
-    
-    Returns dict with:
-        - house_area_m2: Total area of proposed house
-        - outside_area_m2: Area of house outside parcel
-        - outside_percentage: Percentage outside
-        - has_conflict: Boolean indicating if there's any overlap outside parcel
+    """Calculate spatial metrics for a proposed building against a parcel boundary.
+
+    Steps:
+    1. Guard: parcel must be a Polygon (MultiPolygon not supported in MVP).
+    2. Build Shapely polygons from GeoJSON (EPSG:4326, coords as [lon, lat]).
+    3. Auto-detect UTM zone from parcel centroid via pyproj.
+    4. Reproject both polygons to that UTM CRS.
+    5. Compute all areas from real projected geometry — no estimates.
+
+    Returns:
+        dict with keys:
+            house_area_m2        (float) — total house footprint area
+            outside_area_m2      (float) — area of house outside parcel
+            outside_percentage   (float) — outside_area / house_area * 100
+            has_conflict         (bool)  — True if outside_area_m2 > 1e-6
+            intersection_area_m2 (float) — area of house inside parcel
+
+    Raises:
+        NotImplementedError: if parcel geometry type is MultiPolygon
+        ValueError: if geometries are invalid, degenerate, or UTM detection fails
     """
     try:
-        parcel_ring = parcel_geometry['coordinates'][0]
-        house_ring = house_geometry['coordinates'][0]
-        
-        # Calculate house area in square degrees
-        house_area_degrees = calculate_ring_area(house_ring)
-        avg_latitude = estimate_average_latitude(house_ring)
-        house_area_m2 = convert_area_to_square_meters(house_area_degrees, avg_latitude)
-        
-        # Check if any part of house is outside parcel
-        has_conflict = False
-        outside_area_degrees = 0
-        
-        # For simplicity in MVP: check if all vertices of house are inside parcel
-        all_inside = all(point_in_polygon(vertex, parcel_ring) for vertex in house_ring)
-        
-        if not all_inside:
-            has_conflict = True
-            # Estimate: if not all inside, approximately 25% might be outside (conservative estimate)
-            # In production with real clipping, this would be exact
-            outside_area_degrees = house_area_degrees * 0.25
-        
-        outside_area_m2 = convert_area_to_square_meters(outside_area_degrees, avg_latitude)
-        outside_percentage = (outside_area_m2 / house_area_m2 * 100) if house_area_m2 > 0 else 0
-        
+        # --- 0. Guard: MultiPolygon parcels not supported in MVP ---
+        parcel_type = parcel_geometry.get("type") if isinstance(parcel_geometry, dict) else None
+        if parcel_type == "MultiPolygon":
+            raise NotImplementedError(
+                "MultiPolygon parcels not yet supported in MVP"
+            )
+
+        # --- 1. Build Shapely objects in geographic CRS (EPSG:4326) ---
+        parcel_4326 = _geojson_to_shapely(parcel_geometry)
+        house_4326 = _geojson_to_shapely(house_geometry)
+
+        if not parcel_4326.is_valid:
+            raise ValueError(
+                f"Parcel geometry is not valid: {explain_validity(parcel_4326)}"
+            )
+        if not house_4326.is_valid:
+            raise ValueError(
+                f"House geometry is not valid: {explain_validity(house_4326)}"
+            )
+
+        # --- 2. Auto-detect UTM zone from parcel centroid ---
+        centroid = parcel_4326.centroid
+        utm_crs = _auto_utm_crs(centroid.x, centroid.y)
+
+        # --- 3. Reproject both polygons to projected CRS ---
+        transformer = pyproj.Transformer.from_crs(
+            "EPSG:4326",
+            utm_crs,
+            always_xy=True,   # ensures (lon, lat) → (easting, northing)
+        )
+
+        parcel_proj = _reproject_polygon(parcel_4326, transformer)
+        house_proj = _reproject_polygon(house_4326, transformer)
+
+        # --- 4. Compute real geometry ---
+        house_area_m2 = house_proj.area
+
+        # Guard: near-zero area house — don't divide by zero, return safe result
+        if house_area_m2 <= 1e-6:
+            return {
+                "house_area_m2": round(house_area_m2, 2),
+                "outside_area_m2": 0.0,
+                "outside_percentage": 0.0,
+                "has_conflict": False,
+                "intersection_area_m2": 0.0,
+            }
+
+        outside_geom = house_proj.difference(parcel_proj)
+        outside_area_m2 = outside_geom.area
+
+        intersection_area_m2 = house_proj.intersection(parcel_proj).area
+
+        outside_percentage = outside_area_m2 / house_area_m2 * 100
+        has_conflict = outside_area_m2 > 1e-6
+
         return {
-            'house_area_m2': round(house_area_m2, 2),
-            'outside_area_m2': round(outside_area_m2, 2),
-            'outside_percentage': round(outside_percentage, 2),
-            'has_conflict': has_conflict,
-            'intersection_area_m2': round(house_area_m2 - outside_area_m2, 2) if house_area_m2 > 0 else 0
+            "house_area_m2": round(house_area_m2, 2),
+            "outside_area_m2": round(outside_area_m2, 2),
+            "outside_percentage": round(outside_percentage, 2),
+            "has_conflict": has_conflict,
+            "intersection_area_m2": round(intersection_area_m2, 2),
         }
+
+    except (ValueError, NotImplementedError):
+        raise
     except Exception as e:
         raise ValueError(f"Error calculating metrics: {str(e)}")
