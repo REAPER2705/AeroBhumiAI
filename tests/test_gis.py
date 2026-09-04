@@ -191,3 +191,142 @@ class TestDiagnosis:
         # With high tolerance, should be clear
         result_lenient = diagnosis_service.diagnose_result(metrics, tolerance_m2=10.0)
         assert result_lenient == 'CLEAR'
+
+
+class TestEdgeCases:
+    """Edge-case hardening tests added in Task 4.
+
+    Covers scenarios the original test suite did not exercise:
+    - Self-intersecting (bowtie) polygon
+    - Near-zero area house polygon
+    - MultiPolygon parcel (unsupported in MVP)
+    - House polygon exactly equal to parcel polygon
+    """
+
+    # ------------------------------------------------------------------
+    # Shared fixtures
+    # ------------------------------------------------------------------
+
+    @pytest.fixture
+    def parcel_polygon(self):
+        """Standard 1km x 1km parcel used across edge-case tests."""
+        return {
+            "type": "Polygon",
+            "coordinates": [
+                [[28.5, -15.5], [28.51, -15.5], [28.51, -15.51],
+                 [28.5, -15.51], [28.5, -15.5]]
+            ],
+        }
+
+    # ------------------------------------------------------------------
+    # 1. Self-intersecting polygon (bowtie)
+    # ------------------------------------------------------------------
+
+    def test_self_intersecting_polygon_is_invalid(self):
+        """validate_polygon_geometry must reject a bowtie / self-intersecting ring.
+
+        The ring passes all structural checks (closed, >= 4 coords, valid bounds)
+        but Shapely's is_valid returns False because edges cross.
+        The old degree-math code would have accepted this silently.
+        """
+        bowtie = {
+            "type": "Polygon",
+            "coordinates": [
+                # Cross-shaped figure-eight: top-left → bottom-right → top-right → bottom-left
+                [
+                    [28.5,  -15.5],
+                    [28.51, -15.51],
+                    [28.51, -15.5],
+                    [28.5,  -15.51],
+                    [28.5,  -15.5],   # closed
+                ]
+            ],
+        }
+        is_valid, error = spatial_service.validate_polygon_geometry(bowtie)
+        assert is_valid is False
+        # Must be caught by the Shapely validity layer, not the structural checks
+        assert len(error) > 0
+
+    # ------------------------------------------------------------------
+    # 2. Near-zero area house polygon
+    # ------------------------------------------------------------------
+
+    def test_near_zero_area_house_does_not_crash(self, parcel_polygon):
+        """calculate_metrics must not raise ZeroDivisionError for a degenerate house.
+
+        A polygon whose vertices are nanometres apart produces an effectively
+        zero area after reprojection. outside_percentage must be returned as 0,
+        not raise an exception.
+        """
+        near_zero_house = {
+            "type": "Polygon",
+            "coordinates": [
+                [
+                    [28.5,       -15.5],
+                    [28.5000001, -15.5],
+                    [28.5000001, -15.5000001],
+                    [28.5,       -15.5000001],
+                    [28.5,       -15.5],        # closed
+                ]
+            ],
+        }
+        # Must not raise
+        metrics = spatial_service.calculate_metrics(parcel_polygon, near_zero_house)
+
+        assert metrics["outside_percentage"] == 0.0
+        assert metrics["has_conflict"] is False
+        assert metrics["outside_area_m2"] == 0.0
+
+    # ------------------------------------------------------------------
+    # 3. MultiPolygon parcel — unsupported in MVP
+    # ------------------------------------------------------------------
+
+    def test_multipolygon_parcel_raises(self):
+        """calculate_metrics must raise NotImplementedError for MultiPolygon parcels.
+
+        Rather than silently producing wrong numbers, the MVP explicitly rejects
+        MultiPolygon input so the caller can handle it gracefully.
+        """
+        multi_parcel = {
+            "type": "MultiPolygon",
+            "coordinates": [
+                [[[28.5, -15.5], [28.51, -15.5], [28.51, -15.51],
+                  [28.5, -15.51], [28.5, -15.5]]],
+                [[[28.52, -15.52], [28.53, -15.52], [28.53, -15.53],
+                  [28.52, -15.53], [28.52, -15.52]]],
+            ],
+        }
+        house = {
+            "type": "Polygon",
+            "coordinates": [
+                [[28.502, -15.502], [28.505, -15.502], [28.505, -15.505],
+                 [28.502, -15.505], [28.502, -15.502]]
+            ],
+        }
+        with pytest.raises(NotImplementedError, match="MultiPolygon"):
+            spatial_service.calculate_metrics(multi_parcel, house)
+
+    # ------------------------------------------------------------------
+    # 4. House exactly equal to parcel
+    # ------------------------------------------------------------------
+
+    def test_house_identical_to_parcel(self, parcel_polygon):
+        """When house == parcel, outside_area_m2 must be ~0 and has_conflict False.
+
+        Shapely's difference of identical polygons should return an empty geometry
+        with area 0 (or floating-point noise well below 1e-6).
+        """
+        # Use the same coordinates as the parcel fixture
+        house_same_as_parcel = {
+            "type": "Polygon",
+            "coordinates": [
+                [[28.5, -15.5], [28.51, -15.5], [28.51, -15.51],
+                 [28.5, -15.51], [28.5, -15.5]]
+            ],
+        }
+        metrics = spatial_service.calculate_metrics(parcel_polygon, house_same_as_parcel)
+
+        assert metrics["outside_area_m2"] < 1.0     # allow tiny fp noise
+        assert metrics["outside_percentage"] < 0.01
+        assert metrics["has_conflict"] is False
+        assert metrics["house_area_m2"] > 0
