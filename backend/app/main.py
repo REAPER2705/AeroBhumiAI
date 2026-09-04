@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import route modules
-from app.routes import spatial, parcels
+from app.routes import spatial, parcels, upload
 
 app = FastAPI(
     title="AeroBhumiAI Backend",
@@ -24,6 +24,7 @@ app.add_middleware(
 # Register route modules
 app.include_router(parcels.router)
 app.include_router(spatial.router)
+app.include_router(upload.router)
 
 
 @app.get("/health")
