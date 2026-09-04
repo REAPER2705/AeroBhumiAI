@@ -373,3 +373,245 @@ class TestDeterministicBehavior:
 def test_safe_legal_wording():
     """Test AI uses appropriate legal wording."""
     pass
+
+
+# ---------------------------------------------------------------------------
+# ai_service tests — appended, existing tests above are untouched
+# ---------------------------------------------------------------------------
+
+from app.services.ai_service import explain_result, AIServiceError
+
+
+class TestAIServiceClear:
+    """explain_result() for CLEAR diagnoses."""
+
+    @pytest.fixture
+    def clear_diagnosis(self):
+        return {
+            "result": "CLEAR",
+            "reason": "Proposed footprint remains within reference parcel boundary",
+            "priority": "low",
+            "affected_area_m2": 0.0,
+            "outside_percentage": 0.0,
+            "house_area_m2": 180.0,
+            "has_conflict": False,
+            "tolerance_m2": 0.5,
+            "evidence": [],
+        }
+
+    def test_clear_returns_all_required_keys(self, clear_diagnosis):
+        out = explain_result(clear_diagnosis)
+        for key in ("summary", "problem", "recommended_action", "verification_note"):
+            assert key in out, f"Missing key: {key}"
+
+    def test_clear_summary_mentions_no_discrepancy(self, clear_diagnosis):
+        out = explain_result(clear_diagnosis)
+        assert "no significant" in out["summary"].lower()
+
+    def test_clear_problem_contains_house_area_from_input(self, clear_diagnosis):
+        """house_area_m2 = 180.0 must appear in the problem text."""
+        out = explain_result(clear_diagnosis)
+        assert "180.0" in out["problem"] or "180.00" in out["problem"]
+
+    def test_clear_problem_does_not_invent_numbers(self, clear_diagnosis):
+        """Problem text must not contain numbers not in the input."""
+        out = explain_result(clear_diagnosis)
+        # Change house area and verify new value appears, old does not
+        clear_diagnosis["house_area_m2"] = 250.0
+        out2 = explain_result(clear_diagnosis)
+        assert "250.0" in out2["problem"] or "250.00" in out2["problem"]
+        assert "180" not in out2["problem"]
+
+    def test_clear_verification_note_contains_legal_disclaimer(self, clear_diagnosis):
+        out = explain_result(clear_diagnosis)
+        assert "competent authorities" in out["verification_note"].lower()
+
+    def test_clear_deterministic(self, clear_diagnosis):
+        assert explain_result(clear_diagnosis) == explain_result(clear_diagnosis)
+
+
+class TestAIServiceEncroachment:
+    """explain_result() for POTENTIAL_BUILDING_ENCROACHMENT diagnoses."""
+
+    @pytest.fixture
+    def minor_diagnosis(self):
+        """15% outside — minor severity."""
+        return {
+            "result": "POTENTIAL_BUILDING_ENCROACHMENT",
+            "reason": "Minor portion extends outside",
+            "priority": "medium",
+            "affected_area_m2": 27.0,
+            "outside_percentage": 15.0,
+            "house_area_m2": 180.0,
+            "has_conflict": True,
+            "tolerance_m2": 0.5,
+            "evidence": [],
+        }
+
+    @pytest.fixture
+    def significant_diagnosis(self):
+        """30% outside — significant severity."""
+        return {
+            "result": "POTENTIAL_BUILDING_ENCROACHMENT",
+            "reason": "Significant portion extends outside",
+            "priority": "high",
+            "affected_area_m2": 42.5,
+            "outside_percentage": 23.61,
+            "house_area_m2": 180.0,
+            "has_conflict": True,
+            "tolerance_m2": 0.5,
+            "evidence": [],
+        }
+
+    @pytest.fixture
+    def major_diagnosis(self):
+        """60% outside — majority severity."""
+        return {
+            "result": "POTENTIAL_BUILDING_ENCROACHMENT",
+            "reason": "Majority extends outside",
+            "priority": "high",
+            "affected_area_m2": 108.0,
+            "outside_percentage": 60.0,
+            "house_area_m2": 180.0,
+            "has_conflict": True,
+            "tolerance_m2": 0.5,
+            "evidence": [],
+        }
+
+    def test_encroachment_returns_all_required_keys(self, minor_diagnosis):
+        out = explain_result(minor_diagnosis)
+        for key in ("summary", "problem", "recommended_action", "verification_note"):
+            assert key in out
+
+    def test_problem_contains_affected_area_from_input(self, significant_diagnosis):
+        """affected_area_m2 = 42.5 must appear in the problem text verbatim."""
+        out = explain_result(significant_diagnosis)
+        assert "42.5" in out["problem"] or "42.50" in out["problem"]
+
+    def test_problem_contains_outside_percentage_from_input(self, significant_diagnosis):
+        """outside_percentage = 23.61 must appear in the problem text."""
+        out = explain_result(significant_diagnosis)
+        assert "23.61" in out["problem"]
+
+    def test_summary_mentions_encroachment(self, minor_diagnosis):
+        out = explain_result(minor_diagnosis)
+        assert "encroachment" in out["summary"].lower()
+
+    def test_summary_reflects_majority_severity(self, major_diagnosis):
+        """60% outside → summary must use majority language."""
+        out = explain_result(major_diagnosis)
+        assert "majority" in out["summary"].lower() or "60.00" in out["summary"]
+
+    def test_summary_reflects_minor_severity(self, minor_diagnosis):
+        """15% outside → summary must use minor language (not majority/significant)."""
+        out = explain_result(minor_diagnosis)
+        summary_lower = out["summary"].lower()
+        assert "majority" not in summary_lower
+        assert "significant" not in summary_lower
+
+    def test_recommended_action_contains_affected_area(self, significant_diagnosis):
+        """Affected area 42.5 must appear in the recommended_action text."""
+        out = explain_result(significant_diagnosis)
+        assert "42.5" in out["recommended_action"] or "42.50" in out["recommended_action"]
+
+    def test_verification_note_contains_legal_disclaimer(self, minor_diagnosis):
+        out = explain_result(minor_diagnosis)
+        assert "competent authorities" in out["verification_note"].lower()
+
+    def test_encroachment_deterministic(self, significant_diagnosis):
+        assert explain_result(significant_diagnosis) == explain_result(significant_diagnosis)
+
+
+class TestAIServiceBoundaryVariance:
+    """explain_result() for BOUNDARY_VARIANCE diagnoses."""
+
+    @pytest.fixture
+    def variance_diagnosis(self):
+        return {
+            "result": "BOUNDARY_VARIANCE",
+            "reason": "Spatial relationship requires verification",
+            "priority": "medium",
+            "affected_area_m2": 0.0,
+            "outside_percentage": 0.0,
+            "house_area_m2": 180.0,
+            "has_conflict": False,
+            "tolerance_m2": 0.5,
+            "evidence": [],
+        }
+
+    def test_variance_returns_all_required_keys(self, variance_diagnosis):
+        out = explain_result(variance_diagnosis)
+        for key in ("summary", "problem", "recommended_action", "verification_note"):
+            assert key in out
+
+    def test_variance_summary_mentions_variance_or_verification(self, variance_diagnosis):
+        out = explain_result(variance_diagnosis)
+        summary_lower = out["summary"].lower()
+        assert "variance" in summary_lower or "verification" in summary_lower
+
+    def test_variance_recommended_action_mentions_field_or_official(self, variance_diagnosis):
+        out = explain_result(variance_diagnosis)
+        action_lower = out["recommended_action"].lower()
+        assert "field" in action_lower or "official" in action_lower
+
+    def test_variance_verification_note_contains_legal_disclaimer(self, variance_diagnosis):
+        out = explain_result(variance_diagnosis)
+        assert "competent authorities" in out["verification_note"].lower()
+
+    def test_variance_problem_contains_house_area(self, variance_diagnosis):
+        out = explain_result(variance_diagnosis)
+        assert "180.0" in out["problem"] or "180.00" in out["problem"]
+
+
+class TestAIServiceErrors:
+    """explain_result() error handling — missing/invalid inputs."""
+
+    def test_missing_result_key_raises(self):
+        bad = {
+            "reason": "x", "priority": "low",
+            "affected_area_m2": 0.0, "outside_percentage": 0.0,
+            "house_area_m2": 100.0, "has_conflict": False,
+        }
+        with pytest.raises(AIServiceError, match="result"):
+            explain_result(bad)
+
+    def test_missing_affected_area_raises(self):
+        bad = {
+            "result": "CLEAR", "reason": "x", "priority": "low",
+            "outside_percentage": 0.0, "house_area_m2": 100.0, "has_conflict": False,
+        }
+        with pytest.raises(AIServiceError, match="affected_area_m2"):
+            explain_result(bad)
+
+    def test_missing_outside_percentage_raises(self):
+        bad = {
+            "result": "CLEAR", "reason": "x", "priority": "low",
+            "affected_area_m2": 0.0, "house_area_m2": 100.0, "has_conflict": False,
+        }
+        with pytest.raises(AIServiceError, match="outside_percentage"):
+            explain_result(bad)
+
+    def test_missing_house_area_raises(self):
+        bad = {
+            "result": "CLEAR", "reason": "x", "priority": "low",
+            "affected_area_m2": 0.0, "outside_percentage": 0.0, "has_conflict": False,
+        }
+        with pytest.raises(AIServiceError, match="house_area_m2"):
+            explain_result(bad)
+
+    def test_unrecognised_result_value_raises(self):
+        bad = {
+            "result": "UNKNOWN_STATE", "reason": "x", "priority": "low",
+            "affected_area_m2": 0.0, "outside_percentage": 0.0,
+            "house_area_m2": 100.0, "has_conflict": False,
+        }
+        with pytest.raises(AIServiceError, match="Unrecognised"):
+            explain_result(bad)
+
+    def test_non_dict_input_raises(self):
+        with pytest.raises(AIServiceError):
+            explain_result("not a dict")
+
+    def test_empty_dict_raises(self):
+        with pytest.raises(AIServiceError):
+            explain_result({})
