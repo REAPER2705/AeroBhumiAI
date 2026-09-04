@@ -24,7 +24,7 @@ router = APIRouter(prefix="/api/upload", tags=["upload"])
 # Path is relative to the project root (AeroBhumiAI/).
 # Resolved to absolute at startup so the route works regardless of cwd.
 _PROJECT_ROOT = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
 )
 _IMAGES_DIR = os.path.join(_PROJECT_ROOT, "data", "images")
 
