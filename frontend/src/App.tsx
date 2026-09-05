@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { MapContainer, TileLayer, LayersControl, Polygon } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { UploadCloud, Map as MapIcon, AlertTriangle, CheckCircle, Layers, FileText, Activity } from "lucide-react";
@@ -18,18 +18,49 @@ export default function App() {
   const [status, setStatus] = useState<'idle' | 'uploading' | 'analyzing' | 'done'>('idle');
   const [showLegal, setShowLegal] = useState(true);
   const [showAI, setShowAI] = useState(true);
+  const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      handleFileSelected(file);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      handleFileSelected(file);
+    }
+  };
+
+  const handleFileSelected = (file: File) => {
+    setSelectedFileName(file.name);
     processUpload();
+  };
+
+  const handleBrowseClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   const processUpload = () => {
     setStatus('uploading');
+    // Simulate upload delay
     setTimeout(() => {
       setStatus('analyzing');
+      // Simulate AI analysis delay
       setTimeout(() => setStatus('done'), 2000);
     }, 1500);
+  };
+
+  const handleReset = () => {
+    setStatus('idle');
+    setSelectedFileName(null);
   };
 
   return (
@@ -53,19 +84,30 @@ export default function App() {
           
           {/* Upload Zone */}
           {status === 'idle' && (
-            <div 
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
-              className="border-2 border-dashed border-blue-300 rounded-xl p-8 flex flex-col items-center justify-center bg-blue-50/50 hover:bg-blue-50 transition cursor-pointer"
-              onClick={processUpload}
-            >
-              <UploadCloud className="w-12 h-12 text-blue-500 mb-4" />
-              <p className="text-sm font-semibold text-gray-700">Drag & Drop Drone Imagery</p>
-              <p className="text-xs text-gray-500 mt-2 text-center">Supports .TIF, .PNG (Max 50MB)</p>
-              <button className="mt-6 px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition">
-                Browse Files
-              </button>
-            </div>
+            <>
+              {/* Hidden File Input */}
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                accept=".tif,.tiff,.png,.jpg,.jpeg" 
+                className="hidden" 
+              />
+              
+              <div 
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+                onClick={handleBrowseClick}
+                className="border-2 border-dashed border-blue-300 rounded-xl p-8 flex flex-col items-center justify-center bg-blue-50/50 hover:bg-blue-100 transition cursor-pointer group"
+              >
+                <UploadCloud className="w-12 h-12 text-blue-500 mb-4 group-hover:scale-110 transition-transform" />
+                <p className="text-sm font-semibold text-gray-700">Drag & Drop Drone Imagery</p>
+                <p className="text-xs text-gray-500 mt-2 text-center">Supports .TIF, .PNG, .JPG (Max 50MB)</p>
+                <button className="mt-6 px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition pointer-events-none">
+                  Browse Files
+                </button>
+              </div>
+            </>
           )}
 
           {/* Loading States */}
@@ -75,8 +117,11 @@ export default function App() {
               <h3 className="text-lg font-bold text-gray-800">
                 {status === 'uploading' ? 'Uploading Drone Data...' : 'AI Segmenting Parcels...'}
               </h3>
-              <p className="text-sm text-gray-500 mt-2 text-center">
-                {status === 'uploading' ? 'Processing 45MB GeoTIFF' : 'Running Meta SAM 2 Model'}
+              <p className="text-sm text-gray-500 mt-2 text-center font-mono bg-gray-100 px-2 py-1 rounded">
+                {selectedFileName}
+              </p>
+              <p className="text-xs text-blue-600 mt-2 text-center font-bold">
+                {status === 'uploading' ? 'Encrypting & Uploading' : 'Running Meta SAM 2 Model'}
               </p>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-6 overflow-hidden">
                 <div className="bg-blue-600 h-2 rounded-full animate-[pulse_2s_ease-in-out_infinite]" style={{ width: status === 'uploading' ? '40%' : '85%' }}></div>
@@ -90,8 +135,9 @@ export default function App() {
               
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-start gap-3 mb-6">
                 <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
+                <div className="flex-1">
                   <h3 className="font-bold text-green-900">Analysis Complete</h3>
+                  <p className="text-xs text-green-700 mt-1 font-mono truncate max-w-[200px]" title={selectedFileName || ""}>{selectedFileName}</p>
                   <p className="text-sm text-green-700 mt-1">Scanned 1.2 sq km in 3.4 seconds.</p>
                 </div>
               </div>
@@ -146,6 +192,10 @@ export default function App() {
               
               <button className="w-full mt-6 py-3 bg-gray-900 text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition flex items-center justify-center gap-2">
                 <FileText className="w-4 h-4" /> Generate Official Report
+              </button>
+              
+              <button onClick={handleReset} className="w-full mt-3 py-2 text-blue-600 text-sm font-bold hover:underline transition flex items-center justify-center">
+                Scan Another Image
               </button>
             </div>
           )}
