@@ -29,27 +29,39 @@ function MapFlyTo({ centerPos }: { centerPos: [number, number] | null }) {
 
 function RecenterButton({ centerPos }: { centerPos: [number, number] }) {
   const map = useMap();
-  return (
-    <div className="leaflet-top leaflet-left" style={{ top: '80px', left: '10px', position: 'absolute', zIndex: 1000 }}>
-      <div className="leaflet-control leaflet-bar border-none shadow-md bg-white rounded">
-        <a 
-          href="#" 
-          title="Recenter on Drone Scan" 
-          role="button" 
-          onClick={(e) => { 
-            e.preventDefault(); 
-            e.stopPropagation(); 
-            map.setView(centerPos, 18); 
-          }}
-          onDoubleClick={(e) => e.stopPropagation()}
-          className="text-gray-700 hover:text-black transition-colors select-none"
-          style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'white', borderRadius: '4px' }}
-        >
-          <LocateFixed style={{ width: '18px', height: '18px' }} />
-        </a>
-      </div>
-    </div>
-  );
+  useEffect(() => {
+    const zoomControl = map.getContainer().querySelector('.leaflet-control-zoom');
+    if (zoomControl && !document.getElementById('custom-locate-btn')) {
+      const btn = document.createElement('a');
+      btn.id = 'custom-locate-btn';
+      btn.href = '#';
+      btn.title = 'Recenter on Drone Scan';
+      btn.role = 'button';
+      // Inline SVG for LocateFixed
+      btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" x2="5" y1="12" y2="12"/><line x1="19" x2="22" y1="12" y2="12"/><line x1="12" x2="12" y1="2" y2="5"/><line x1="12" x2="12" y1="19" y2="22"/><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="3"/></svg>`;
+      
+      // Inherit leaflet base styles but enforce centering
+      btn.style.display = 'flex';
+      btn.style.alignItems = 'center';
+      btn.style.justifyContent = 'center';
+      btn.style.cursor = 'pointer';
+      btn.style.color = '#374151';
+      
+      btn.onclick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        map.setView(centerPos, 18);
+      };
+      btn.ondblclick = (e) => e.stopPropagation();
+      
+      // Hover effects
+      btn.onmouseover = () => { btn.style.backgroundColor = '#f4f4f5'; btn.style.color = '#000'; };
+      btn.onmouseout = () => { btn.style.backgroundColor = '#fff'; btn.style.color = '#374151'; };
+      
+      zoomControl.appendChild(btn);
+    }
+  }, [map, centerPos]);
+  return null;
 }
 
 export default function App() {
