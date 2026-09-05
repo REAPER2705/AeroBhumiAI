@@ -116,20 +116,20 @@ export default function App() {
       {/* Sidebar - Slate theme */}
       <div className="w-[440px] bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 flex flex-col shadow-2xl z-[1000] relative transition-colors duration-300">
         
-        {/* Header - Enterprise Navy/Black */}
-        <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-900 dark:bg-black text-white flex justify-between items-center transition-colors duration-300">
+        {/* Header */}
+        <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-black text-slate-900 dark:text-white flex justify-between items-center transition-colors duration-300">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-500/20 rounded-lg">
-              <MapIcon className="w-7 h-7 text-indigo-400" />
+            <div className="p-2 bg-indigo-100 dark:bg-indigo-500/20 rounded-lg">
+              <MapIcon className="w-7 h-7 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-50">AeroBhumi<span className="text-indigo-400">AI</span></h1>
-              <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold mt-0.5">SIH 2026 - PS 26012</p>
+              <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">AeroBhumi<span className="text-indigo-600 dark:text-indigo-400">AI</span></h1>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-semibold mt-0.5">SIH 2026 - PS 26012</p>
             </div>
           </div>
           <button 
             onClick={() => setIsDarkMode(!isDarkMode)} 
-            className="p-2 rounded-full hover:bg-white/10 text-slate-300 transition"
+            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-white/10 text-slate-500 dark:text-slate-300 transition"
             title="Toggle Dark Mode"
           >
             {isDarkMode ? <Sun className="w-5 h-5 text-amber-300" /> : <Moon className="w-5 h-5" />}
