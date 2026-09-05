@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from "react";
 import { MapContainer, TileLayer, LayersControl, Polygon, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { UploadCloud, Map as MapIcon, AlertTriangle, CheckCircle, Layers, FileText, Activity, Search, X, Download, Moon, Sun, DownloadCloud, PieChart } from "lucide-react";
+// @ts-ignore
+import html2pdf from "html2pdf.js";
 
 // Mock Data
 const LEGAL_PARCELS = [
@@ -37,6 +39,7 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const reportRef = useRef<HTMLDivElement>(null);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -88,6 +91,19 @@ export default function App() {
     a.href = url;
     a.download = `AeroBhumiAI_Audit_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
+  };
+
+  const handleDownloadPDF = () => {
+    if (reportRef.current) {
+      const opt = {
+        margin:       0.5,
+        filename:     `Cadastral_Report_Plot42_${new Date().toISOString().split('T')[0]}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(reportRef.current).save();
+    }
   };
 
   const filteredEncroachments = AI_PARCELS.filter(p => 
@@ -362,9 +378,9 @@ export default function App() {
               </button>
             </div>
             
-            {/* Modal Body (Fake Document) */}
+            {/* Modal Body (Fake Document) to be converted to PDF */}
             <div className="p-8 overflow-y-auto bg-slate-100 dark:bg-slate-950 flex-1 transition-colors">
-              <div className="bg-white p-10 border border-slate-300 shadow-md mx-auto max-w-lg font-serif text-slate-900">
+              <div ref={reportRef} className="bg-white p-10 border border-slate-300 shadow-md mx-auto max-w-lg font-serif text-slate-900">
                 <div className="text-center mb-8 border-b-2 border-slate-900 pb-4">
                   <h1 className="text-2xl font-black uppercase tracking-widest text-slate-900">Department of Land Resources</h1>
                   <p className="text-sm font-bold text-slate-600 mt-1 uppercase tracking-widest">Government of India</p>
@@ -408,7 +424,7 @@ export default function App() {
               <button onClick={() => setShowReportModal(false)} className="px-5 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition">
                 Cancel
               </button>
-              <button className="px-5 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition flex items-center gap-2 shadow-md shadow-indigo-500/20">
+              <button onClick={handleDownloadPDF} className="px-5 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition flex items-center gap-2 shadow-md shadow-indigo-500/20">
                 <Download className="w-4 h-4" /> Download PDF
               </button>
             </div>
