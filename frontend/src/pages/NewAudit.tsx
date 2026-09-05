@@ -331,6 +331,7 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
                 parcelGeometry={selectedParcel?.geometry} 
                 onHouseDrawn={setHouseGeometry} 
                 onHouseCleared={() => setHouseGeometry(null)} 
+                showEncroachment={true}
               />
             </div>
             {/* Color Legend */}
