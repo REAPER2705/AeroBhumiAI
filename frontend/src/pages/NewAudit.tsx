@@ -13,6 +13,12 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
   const [step, setStep] = useState<'select' | 'upload' | 'draw' | 'spatial' | 'analyze' | 'ai_explain' | 'generate_report'>(
     initialStep === 'draw' ? 'draw' : initialStep === 'analyze' ? 'analyze' : 'select'
   );
+
+  useEffect(() => {
+    if (initialStep === 'draw') setStep('draw');
+    else if (initialStep === 'analyze') setStep('analyze');
+    else if (initialStep === 'select') setStep('select');
+  }, [initialStep]);
   
   const [parcels, setParcels] = useState<Parcel[]>([]);
   const [selectedParcelId, setSelectedParcelId] = useState<string>('PLOT-45');

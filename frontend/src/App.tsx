@@ -39,7 +39,7 @@ export default function App() {
       case 'Audit Map':
       case 'My Audits':
       case 'New Audit':
-        return <NewAudit setActiveTab={handleTabChange} initialStep={initialAuditStep} />;
+        return <NewAudit key={activeTab} setActiveTab={handleTabChange} initialStep={initialAuditStep} />;
       case 'Reports':
         return <Reports />;
       default:
