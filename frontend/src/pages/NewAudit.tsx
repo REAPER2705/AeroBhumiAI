@@ -64,6 +64,20 @@ export default function NewAudit({ setActiveTab }: { setActiveTab: (tab: string)
     }
   };
 
+  const handleFileUpload = async (file: File) => {
+    if (!selectedParcelId) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await apiClient.uploadDrone(file);
+      setStep('draw');
+    } catch (err) {
+      setError("Drone image upload failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Step 1: Select & Upload
   if (step === 'select' || step === 'upload') {
     return (
@@ -73,17 +87,25 @@ export default function NewAudit({ setActiveTab }: { setActiveTab: (tab: string)
 
         {error && <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg">{error}</div>}
 
-        <div className={`bg-white border-2 border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center mb-6 relative ${!selectedParcelId ? 'opacity-50' : ''}`}>
-          {selectedParcelId && (
-            <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => { if(e.target.files?.length) setStep('draw') }} />
+        <div className={`bg-white border-2 border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center mb-6 relative ${!selectedParcelId || loading ? 'opacity-50' : ''}`}>
+          {selectedParcelId && !loading && (
+            <input 
+              type="file" 
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+              onChange={(e) => { if (e.target.files?.[0]) handleFileUpload(e.target.files[0]); }} 
+            />
           )}
           <UploadCloud className="w-12 h-12 text-gray-400 mb-4" />
-          <p className="font-bold text-gray-700 mb-2">Drag & drop your GeoTIFF file here</p>
+          <p className="font-bold text-gray-700 mb-2">
+            {loading ? 'Uploading & Processing Drone Image...' : 'Drag & drop your GeoTIFF file here'}
+          </p>
           <p className="text-sm text-gray-500 mb-6">or</p>
-          <button className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold pointer-events-none">Browse File</button>
+          <button className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold pointer-events-none">
+            {loading ? 'Uploading...' : 'Browse File'}
+          </button>
           <button 
             onClick={() => selectedParcelId && setStep('draw')} 
-            disabled={!selectedParcelId}
+            disabled={!selectedParcelId || loading}
             className="mt-4 text-xs font-bold text-gray-500 hover:text-green-600 underline relative z-10 disabled:cursor-not-allowed"
           >
             Skip Upload (Use Satellite)
