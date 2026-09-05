@@ -223,6 +223,20 @@ export default function NewAudit({ setActiveTab }: { setActiveTab: (tab: string)
     );
   }
 
+  const [reportGenerated, setReportGenerated] = useState<boolean>(false);
+
+  const handleGenerateReport = async () => {
+    setLoading(true);
+    try {
+      await apiClient.generateReport(selectedParcelId || 'AUD-001');
+      setReportGenerated(true);
+    } catch (err) {
+      setError("Failed to generate report.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Step 4: Full Audit Analysis Result
   if (step === 'analyze' && auditResult) {
     return (
@@ -230,14 +244,23 @@ export default function NewAudit({ setActiveTab }: { setActiveTab: (tab: string)
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Audit Result</h1>
         <p className="text-gray-500 mb-6">AI-powered land compliance audit results.</p>
 
+        {reportGenerated && (
+          <div className="mb-6 p-4 bg-green-50 text-green-800 border border-green-200 rounded-xl flex justify-between items-center">
+            <span className="font-bold">✓ Audit Report Generated Successfully! (ID: REP-{selectedParcelId || '001'})</span>
+            <button onClick={() => setActiveTab('Reports')} className="text-xs bg-green-600 text-white px-3 py-1.5 rounded-lg font-bold hover:bg-green-700">
+              View in Reports
+            </button>
+          </div>
+        )}
+
         <div className="flex gap-6">
           <div className="w-1/3 flex flex-col gap-6">
             <div className={`border rounded-xl p-6 ${auditResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
               <p className={`text-xs uppercase font-bold tracking-wider mb-2 ${auditResult.success ? 'text-green-700' : 'text-red-700'}`}>Diagnosis</p>
-              <h3 className={`text-xl font-black uppercase ${auditResult.success ? 'text-green-600' : 'text-red-600'}`}>
-                {auditResult.result}
+              <h3 className={`text-lg font-black uppercase leading-tight break-words ${auditResult.success ? 'text-green-600' : 'text-red-600'}`}>
+                {auditResult.result?.replace(/_/g, ' ')}
               </h3>
-              <p className={`text-sm mt-2 ${auditResult.success ? 'text-green-800' : 'text-red-800'}`}>
+              <p className={`text-sm mt-3 ${auditResult.success ? 'text-green-800' : 'text-red-800'}`}>
                 {auditResult.problem || "No significant spatial conflict detected."}
               </p>
             </div>
@@ -245,7 +268,7 @@ export default function NewAudit({ setActiveTab }: { setActiveTab: (tab: string)
 
           <div className="w-2/3 flex flex-col gap-6">
             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-              <h3 className="text-sm font-bold mb-4">Recommended Action</h3>
+              <h3 className="text-sm font-bold mb-4 text-gray-500 uppercase tracking-wider">Recommended Action</h3>
               <p className="text-sm font-bold text-gray-900 mb-2">{auditResult.recommended_action}</p>
             </div>
 
@@ -265,7 +288,13 @@ export default function NewAudit({ setActiveTab }: { setActiveTab: (tab: string)
 
         <div className="flex justify-between mt-8">
           <button onClick={() => setActiveTab('Dashboard')} className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">Back to Dashboard</button>
-          <button className="px-6 py-2 bg-green-600 rounded-lg text-sm font-bold text-white hover:bg-green-700">Generate Report</button>
+          <button 
+            onClick={handleGenerateReport} 
+            disabled={loading || reportGenerated}
+            className="px-6 py-2 bg-green-600 rounded-lg text-sm font-bold text-white hover:bg-green-700 disabled:opacity-50"
+          >
+            {loading ? 'Generating Report...' : reportGenerated ? 'Report Generated ✓' : 'Generate Report'}
+          </button>
         </div>
       </div>
     );
