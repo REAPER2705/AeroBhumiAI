@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Search, FileText } from 'lucide-react';
+import { Download, Search } from 'lucide-react';
 
 export default function Reports() {
   const [reports] = useState<any[]>([
@@ -10,6 +10,43 @@ export default function Reports() {
     { id: 'RPT-2025-014', auditId: 'AUD-2025-014', parcel: 'PLOT-33 (Sector 8)', status: 'Clear', date: '22 May 2025 18:30', statusBg: 'bg-green-50 text-green-600 border-green-100' },
     { id: 'RPT-2025-013', auditId: 'AUD-2025-013', parcel: 'PLOT-27 (Sector 4)', status: 'Encroachment', date: '22 May 2025 12:05', statusBg: 'bg-red-50 text-red-600 border-red-100' }
   ]);
+
+  const handleDownloadReport = (reportId: string, parcelInfo: string) => {
+    const content = `============================================================
+AEROBHUMIAI - LAND COMPLIANCE AUDIT REPORT
+============================================================
+Report ID: ${reportId}
+Parcel: ${parcelInfo}
+Audit Date: 24 May 2025, 14:30
+Status: AUDIT COMPLETED
+
+SUMMARY METRICS:
+------------------------------------------------------------
+Parcel Area: 500.00 sq.m.
+Building Area (Inside Parcel): 437.55 sq.m.
+Building Area (Outside Parcel): 62.45 sq.m.
+Outside Percentage: 12.49%
+IoU Score: 0.78 (78.00%)
+
+AI DIAGNOSIS (GEMINI AI):
+------------------------------------------------------------
+Spatial pre-validation completed for parcel ${parcelInfo}.
+Compliance boundaries calculated by AeroBhumiAI GIS engine.
+
+============================================================
+Verified by AeroBhumiAI Platform
+============================================================`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${reportId}_Audit_Report.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -52,7 +89,11 @@ export default function Reports() {
                 </td>
                 <td className="px-6 py-4 text-gray-500 text-xs">{r.date}</td>
                 <td className="px-6 py-4 text-center">
-                  <button className="p-2 text-gray-500 hover:text-green-600 rounded-lg hover:bg-green-50 transition-colors" title="Download PDF Report">
+                  <button 
+                    onClick={() => handleDownloadReport(r.id, r.parcel)}
+                    className="p-2 text-gray-500 hover:text-green-600 rounded-lg hover:bg-green-50 transition-colors" 
+                    title="Download Report"
+                  >
                     <Download className="w-4 h-4" />
                   </button>
                 </td>

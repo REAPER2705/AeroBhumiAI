@@ -461,6 +461,52 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
     );
   }
 
+  const handleDownloadPDF = (reportId: string = 'RPT-2025-018') => {
+    const content = `============================================================
+AEROBHUMIAI - LAND COMPLIANCE AUDIT REPORT
+============================================================
+Report ID: ${reportId}
+Parcel ID: ${selectedParcelId || 'PLOT-45'} (Sector 12)
+Audit ID: AUD-2025-018
+Location: Nagpur, Maharashtra
+Audit Date: 24 May 2025, 14:30
+Status: ENCROACHMENT DETECTED
+
+SUMMARY METRICS:
+------------------------------------------------------------
+Parcel Area: 500.00 sq.m.
+Building Area (Inside): 437.55 sq.m.
+Building Area (Outside): 62.45 sq.m.
+Outside Percentage: 12.49%
+IoU Score: 0.78 (78.00%)
+
+AI DIAGNOSIS (GEMINI AI):
+------------------------------------------------------------
+The proposed building footprint extends beyond the legal parcel boundary 
+in the south-east direction by approximately 62.45 sq.m. (12.49%). 
+This constitutes an encroachment under municipal land compliance regulations.
+
+RECOMMENDED RESOLUTION:
+------------------------------------------------------------
+1. Re-align the proposed building within the legal parcel boundary.
+2. Reduce the building footprint to eliminate the 62.45 sq.m. encroachment.
+3. Re-submit revised architectural plans for official approval.
+
+============================================================
+Verified by AeroBhumiAI Spatial AI Engine
+============================================================`;
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${reportId}_Audit_Report.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // SCREEN 8: Generate Audit Report
   if (step === 'generate_report') {
     return (
@@ -513,7 +559,10 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
 
         <div className="flex justify-between">
           <button onClick={() => setStep('analyze')} className="px-6 py-2 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50">Back</button>
-          <button onClick={() => setActiveTab('Reports')} className="px-6 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 flex items-center gap-2">
+          <button 
+            onClick={() => handleDownloadPDF('RPT-2025-018')} 
+            className="px-6 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 flex items-center gap-2"
+          >
             <Download className="w-4 h-4" /> Download Report (PDF)
           </button>
         </div>
