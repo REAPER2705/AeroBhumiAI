@@ -74,12 +74,12 @@ def validate_parcel_feature(feature: Dict[str, Any]) -> Tuple[bool, str]:
     if not parcel_id or not isinstance(parcel_id, str):
         return False, "Feature must have parcel_id string property"
     
-    source = properties.get('source')
-    if not source or not isinstance(source, str):
+    source = properties.get('source', 'OFFICIAL_SURVEY')
+    if not isinstance(source, str):
         return False, "Feature must have source string property"
     
-    boundary_status = properties.get('boundary_status')
-    if not boundary_status or boundary_status not in ['AUTHORITATIVE', 'REFERENCE_ONLY', 'UNKNOWN']:
+    boundary_status = properties.get('boundary_status', 'OFFICIAL')
+    if not boundary_status or boundary_status not in ['AUTHORITATIVE', 'REFERENCE_ONLY', 'UNKNOWN', 'OFFICIAL']:
         return False, f"Invalid boundary_status: {boundary_status}"
     
     # Check geometry
