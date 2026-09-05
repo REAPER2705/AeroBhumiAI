@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
   MapPin, 
+  UploadCloud, 
+  Map as MapIcon, 
+  FileCheck, 
   FileText, 
   User, 
-  Layers,
-  Map as MapIcon
+  Layers 
 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Parcels from './pages/Parcels';
@@ -14,25 +16,40 @@ import Reports from './pages/Reports';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
+  const [initialAuditStep, setInitialAuditStep] = useState<string>('select');
+
+  const handleTabChange = (tabName: string) => {
+    setActiveTab(tabName);
+    if (tabName === 'Drone Upload') {
+      setInitialAuditStep('select');
+    } else if (tabName === 'Audit Map') {
+      setInitialAuditStep('draw');
+    } else if (tabName === 'My Audits' || tabName === 'New Audit') {
+      setInitialAuditStep('analyze');
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
       case 'Dashboard':
-        return <Dashboard setActiveTab={setActiveTab} />;
+        return <Dashboard setActiveTab={handleTabChange} />;
       case 'Parcels':
-        return <Parcels setActiveTab={setActiveTab} />;
+        return <Parcels setActiveTab={handleTabChange} />;
+      case 'Drone Upload':
+      case 'Audit Map':
+      case 'My Audits':
       case 'New Audit':
-        return <NewAudit setActiveTab={setActiveTab} />;
+        return <NewAudit setActiveTab={handleTabChange} initialStep={initialAuditStep} />;
       case 'Reports':
         return <Reports />;
       default:
-        return <Dashboard setActiveTab={setActiveTab} />;
+        return <Dashboard setActiveTab={handleTabChange} />;
     }
   };
 
   return (
     <div className="flex h-screen bg-gray-50 font-sans text-gray-900">
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col justify-between">
+      <div className="w-64 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
         <div>
           <div className="p-6 flex items-center gap-2">
             <Layers className="w-6 h-6 text-green-600" />
@@ -42,12 +59,14 @@ export default function App() {
             {[
               { name: 'Dashboard', icon: LayoutDashboard },
               { name: 'Parcels', icon: MapPin },
-              { name: 'New Audit', icon: MapIcon },
+              { name: 'Drone Upload', icon: UploadCloud },
+              { name: 'Audit Map', icon: MapIcon },
+              { name: 'My Audits', icon: FileCheck },
               { name: 'Reports', icon: FileText }
             ].map((item) => (
               <button
                 key={item.name}
-                onClick={() => setActiveTab(item.name)}
+                onClick={() => handleTabChange(item.name)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === item.name 
                     ? 'bg-green-600 text-white shadow-sm' 
