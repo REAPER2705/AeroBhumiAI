@@ -147,10 +147,9 @@ function DashboardScreen({ setActiveTab }: any) {
             </thead>
             <tbody>
               {[
-                { id: 'AUD-2025-018', parcel: 'Plot 12, Sector 7', date: '24 May 2025', status: 'Encroachment', color: 'bg-red-100 text-red-700' },
-                { id: 'AUD-2025-017', parcel: 'Plot 45, Sector 12', date: '24 May 2025', status: 'Clear', color: 'bg-green-100 text-green-700' },
-                { id: 'AUD-2025-016', parcel: 'Plot 21, Sector 3', date: '23 May 2025', status: 'Variance', color: 'bg-yellow-100 text-yellow-700' },
-                { id: 'AUD-2025-015', parcel: 'Plot 9, Sector 15', date: '23 May 2025', status: 'Clear', color: 'bg-green-100 text-green-700' }
+                { id: 'AUD-2025-018', parcel: 'P-001', date: '24 May 2025', status: 'Encroachment', color: 'bg-red-100 text-red-700' },
+                { id: 'AUD-2025-017', parcel: 'P-002', date: '24 May 2025', status: 'Clear', color: 'bg-green-100 text-green-700' },
+                { id: 'AUD-2025-016', parcel: 'P-003', date: '23 May 2025', status: 'Variance', color: 'bg-yellow-100 text-yellow-700' }
               ].map((row, i) => (
                 <tr key={i} className="border-b last:border-0">
                   <td className="py-3 font-medium">{row.id}</td>
@@ -228,11 +227,9 @@ function ParcelsScreen() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {[
-              { id: 'PLOT-45', sector: 'Plot 45, Sector 12', loc: 'Nagpur, Maharashtra', area: '500.00' },
-              { id: 'PLOT-12', sector: 'Plot 12, Sector 7', loc: 'Nagpur, Maharashtra', area: '450.00' },
-              { id: 'PLOT-21', sector: 'Plot 21, Sector 3', loc: 'Nagpur, Maharashtra', area: '600.00' },
-              { id: 'PLOT-09', sector: 'Plot 9, Sector 15', loc: 'Nagpur, Maharashtra', area: '550.00' },
-              { id: 'PLOT-33', sector: 'Plot 33, Sector 8', loc: 'Nagpur, Maharashtra', area: '520.00' },
+              { id: 'P-001', sector: 'Sector 12', loc: 'Nagpur, Maharashtra', area: '1200.00' },
+              { id: 'P-002', sector: 'Sector 7', loc: 'Nagpur, Maharashtra', area: '950.00' },
+              { id: 'P-003', sector: 'Sector 3', loc: 'Nagpur, Maharashtra', area: '1350.00' }
             ].map((p, i) => (
               <tr key={i} className="hover:bg-gray-50">
                 <td className="px-6 py-4 font-medium">{p.id}</td>
@@ -303,13 +300,18 @@ function UploadFlow({ step, setStep }: any) {
       <div className="bg-white border border-gray-200 rounded-xl p-6 flex justify-between items-center shadow-sm">
         <div>
           <p className="text-xs text-gray-500 font-bold mb-1">Selected Parcel</p>
-          <p className="font-bold text-gray-900">PLOT-45</p>
-          <p className="text-sm text-gray-600 mt-1">Plot 45, Sector 12, Nagpur, Maharashtra</p>
+          <div className="flex items-center gap-2">
+            <select className="font-bold text-gray-900 border border-gray-300 rounded px-2 py-1 text-sm bg-gray-50">
+              <option>P-001</option>
+              <option>P-002</option>
+              <option>P-003</option>
+            </select>
+          </div>
+          <p className="text-sm text-gray-600 mt-2">Sector 12, Nagpur, Maharashtra</p>
         </div>
         <div className="text-right">
           <p className="text-xs text-gray-500 font-bold mb-1">Area</p>
-          <p className="font-bold text-gray-900 mb-2">500.00 sq.m.</p>
-          <button className="text-xs font-bold text-gray-600 border border-gray-300 px-3 py-1.5 rounded hover:bg-gray-50">Change Parcel</button>
+          <p className="font-bold text-gray-900 mb-2">1200.00 sq.m.</p>
         </div>
       </div>
     </div>
@@ -349,9 +351,9 @@ function AuditMapScreen({ setStep, setActiveTab }: any) {
 
           <div className="bg-gray-100 rounded-xl p-5 border border-gray-200 mt-auto">
             <p className="text-xs text-gray-500 font-bold mb-1">Selected Parcel</p>
-            <p className="font-bold text-sm text-gray-900">PLOT-45</p>
-            <p className="text-xs text-gray-600 mt-1">Plot 45, Sector 12<br/>Nagpur, Maharashtra</p>
-            <p className="text-xs text-gray-600 mt-2">Area: 500.00 sq.m.</p>
+            <p className="font-bold text-sm text-gray-900">P-001</p>
+            <p className="text-xs text-gray-600 mt-1">Sector 12<br/>Nagpur, Maharashtra</p>
+            <p className="text-xs text-gray-600 mt-2">Area: 1200.00 sq.m.</p>
           </div>
         </div>
 
@@ -383,19 +385,19 @@ function SpatialAnalysisScreen({ setStep }: any) {
           <div className="flex flex-col gap-4 text-sm mb-8">
             <div className="flex justify-between">
               <span className="text-gray-500">Parcel Area</span>
-              <span className="font-bold text-green-700">500.00 sq.m.</span>
+              <span className="font-bold text-green-700">1200.00 sq.m.</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Building Area (Inside Parcel)</span>
-              <span className="font-bold text-gray-900">437.55 sq.m.</span>
+              <span className="font-bold text-gray-900">1050.55 sq.m.</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Building Area (Outside Parcel)</span>
-              <span className="font-bold text-red-600">62.45 sq.m.</span>
+              <span className="font-bold text-red-600">149.45 sq.m.</span>
             </div>
             <div className="flex justify-between border-t border-gray-100 pt-4">
               <span className="text-gray-900 font-bold">Outside Percentage</span>
-              <span className="font-bold text-red-600">12.49%</span>
+              <span className="font-bold text-red-600">12.45%</span>
             </div>
             <div className="flex justify-between pt-1">
               <span className="text-gray-500 font-bold">IoU Score</span>
@@ -451,10 +453,10 @@ function AuditAnalysisScreen({ setStep }: any) {
             <h3 className="text-sm font-bold mb-4 border-b border-gray-100 pb-2">Analysis Summary</h3>
             <table className="w-full text-sm">
               <tbody className="divide-y divide-gray-100">
-                <tr><td className="py-2 text-gray-500">Parcel ID</td><td className="py-2 text-right font-bold">PLOT-45</td></tr>
+                <tr><td className="py-2 text-gray-500">Parcel ID</td><td className="py-2 text-right font-bold">P-001</td></tr>
                 <tr><td className="py-2 text-gray-500">Sector</td><td className="py-2 text-right font-bold">Sector 12</td></tr>
                 <tr><td className="py-2 text-gray-500">City</td><td className="py-2 text-right font-bold">Nagpur</td></tr>
-                <tr><td className="py-2 text-gray-500">Total Area</td><td className="py-2 text-right font-bold">500.00 sq.m.</td></tr>
+                <tr><td className="py-2 text-gray-500">Total Area</td><td className="py-2 text-right font-bold">1200.00 sq.m.</td></tr>
                 <tr><td className="py-2 text-gray-500">Audit Date</td><td className="py-2 text-right font-bold">24 May 2025, 14:30</td></tr>
               </tbody>
             </table>
@@ -478,8 +480,8 @@ function AuditAnalysisScreen({ setStep }: any) {
             <h3 className="text-sm font-bold mb-4 border-b border-gray-100 pb-2">Encroachment Details</h3>
             <table className="w-full text-sm">
               <tbody>
-                <tr><td className="py-2 text-gray-500">Encroached Area</td><td className="py-2 text-right font-bold text-red-600">62.45 sq.m.</td></tr>
-                <tr><td className="py-2 text-gray-500">Outside Percentage</td><td className="py-2 text-right font-bold text-red-600">12.49%</td></tr>
+                <tr><td className="py-2 text-gray-500">Encroached Area</td><td className="py-2 text-right font-bold text-red-600">149.45 sq.m.</td></tr>
+                <tr><td className="py-2 text-gray-500">Outside Percentage</td><td className="py-2 text-right font-bold text-red-600">12.45%</td></tr>
               </tbody>
             </table>
           </div>
@@ -507,7 +509,7 @@ function AiExplanationScreen({ setStep }: any) {
         <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">AI Explanation (Gemini)</h3>
         <p className="text-sm text-gray-700 leading-relaxed mb-4">
           The analysis shows that the proposed building footprint extends beyond the legal parcel boundary in the 
-          south-east direction. Approximately 62.45 sq.m. (12.49%) of the construction lies outside the permissible limit. 
+          south-east direction. Approximately 149.45 sq.m. (12.45%) of the construction lies outside the permissible limit. 
           This constitutes encroachment as per land compliance regulations.
         </p>
         <p className="text-sm text-gray-700 leading-relaxed">
@@ -542,13 +544,13 @@ function GenerateReportScreen() {
           <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Report Summary</h3>
           <table className="w-full text-sm">
             <tbody className="divide-y divide-gray-100">
-              <tr><td className="py-2 text-gray-500">Parcel ID</td><td className="py-2 text-right font-bold">PLOT-45</td></tr>
+              <tr><td className="py-2 text-gray-500">Parcel ID</td><td className="py-2 text-right font-bold">P-001</td></tr>
               <tr><td className="py-2 text-gray-500">Sector</td><td className="py-2 text-right font-bold">Sector 12</td></tr>
               <tr><td className="py-2 text-gray-500">City</td><td className="py-2 text-right font-bold">Nagpur</td></tr>
-              <tr><td className="py-2 text-gray-500">Parcel Area</td><td className="py-2 text-right font-bold">500.00 sq.m.</td></tr>
-              <tr><td className="py-2 text-gray-500">Building Area (Inside)</td><td className="py-2 text-right font-bold">437.55 sq.m.</td></tr>
-              <tr><td className="py-2 text-gray-500">Building Area (Outside)</td><td className="py-2 text-right font-bold text-red-600">62.45 sq.m.</td></tr>
-              <tr><td className="py-2 text-gray-500">Outside Percentage</td><td className="py-2 text-right font-bold text-red-600">12.49%</td></tr>
+              <tr><td className="py-2 text-gray-500">Parcel Area</td><td className="py-2 text-right font-bold">1200.00 sq.m.</td></tr>
+              <tr><td className="py-2 text-gray-500">Building Area (Inside)</td><td className="py-2 text-right font-bold">1050.55 sq.m.</td></tr>
+              <tr><td className="py-2 text-gray-500">Building Area (Outside)</td><td className="py-2 text-right font-bold text-red-600">149.45 sq.m.</td></tr>
+              <tr><td className="py-2 text-gray-500">Outside Percentage</td><td className="py-2 text-right font-bold text-red-600">12.45%</td></tr>
               <tr><td className="py-2 text-gray-500">IoU Score</td><td className="py-2 text-right font-bold">0.78 (78.00%)</td></tr>
               <tr><td className="py-2 text-gray-500">Diagnosis</td><td className="py-2 text-right font-bold text-red-600 uppercase">Encroachment Detected</td></tr>
             </tbody>
@@ -567,7 +569,7 @@ function GenerateReportScreen() {
                <tbody>
                  <tr className="border-b"><td className="p-2 bg-gray-50 font-bold w-1/3">Report ID</td><td className="p-2">RPT-2025-018</td></tr>
                  <tr className="border-b"><td className="p-2 bg-gray-50 font-bold">Audit ID</td><td className="p-2">AUD-2025-018</td></tr>
-                 <tr className="border-b"><td className="p-2 bg-gray-50 font-bold">Parcel</td><td className="p-2">PLOT-45, Sector 12</td></tr>
+                 <tr className="border-b"><td className="p-2 bg-gray-50 font-bold">Parcel</td><td className="p-2">P-001, Sector 12</td></tr>
                  <tr className="border-b"><td className="p-2 bg-gray-50 font-bold">Location</td><td className="p-2">Nagpur, Maharashtra</td></tr>
                  <tr><td className="p-2 bg-gray-50 font-bold">Date</td><td className="p-2">24 May 2025, 14:30</td></tr>
                </tbody>
@@ -575,9 +577,9 @@ function GenerateReportScreen() {
              <div className="w-full text-left">
                <p className="text-xs font-bold mb-2 underline">Summary</p>
                <div className="text-xs flex flex-col gap-1 text-gray-700">
-                 <div className="flex justify-between"><span>Parcel Area:</span><span>500.00 sq.m.</span></div>
-                 <div className="flex justify-between"><span>Building Area (Inside):</span><span>437.55 sq.m.</span></div>
-                 <div className="flex justify-between text-red-600 font-bold"><span>Building Area (Outside):</span><span>62.45 sq.m.</span></div>
+                 <div className="flex justify-between"><span>Parcel Area:</span><span>1200.00 sq.m.</span></div>
+                 <div className="flex justify-between"><span>Building Area (Inside):</span><span>1050.55 sq.m.</span></div>
+                 <div className="flex justify-between text-red-600 font-bold"><span>Building Area (Outside):</span><span>149.45 sq.m.</span></div>
                  <div className="flex justify-between text-red-600 font-bold"><span>Diagnosis:</span><span>ENCROACHMENT DETECTED</span></div>
                </div>
              </div>
@@ -624,12 +626,9 @@ function ReportsScreen() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {[
-              { rid: 'RPT-2025-018', aid: 'AUD-2025-018', parcel: 'PLOT-45 (Sector 12)', status: 'Encroachment', date: '24 May 2025 14:30', c: 'text-red-600' },
-              { rid: 'RPT-2025-017', aid: 'AUD-2025-017', parcel: 'PLOT-12 (Sector 7)', status: 'Clear', date: '24 May 2025 11:20', c: 'text-green-600' },
-              { rid: 'RPT-2025-016', aid: 'AUD-2025-016', parcel: 'PLOT-21 (Sector 3)', status: 'Variance', date: '23 May 2025 16:15', c: 'text-yellow-600' },
-              { rid: 'RPT-2025-015', aid: 'AUD-2025-015', parcel: 'PLOT-09 (Sector 15)', status: 'Clear', date: '23 May 2025 10:38', c: 'text-green-600' },
-              { rid: 'RPT-2025-014', aid: 'AUD-2025-014', parcel: 'PLOT-33 (Sector 8)', status: 'Clear', date: '22 May 2025 18:10', c: 'text-green-600' },
-              { rid: 'RPT-2025-013', aid: 'AUD-2025-013', parcel: 'PLOT-27 (Sector 4)', status: 'Encroachment', date: '22 May 2025 12:05', c: 'text-red-600' },
+              { rid: 'RPT-2025-018', aid: 'AUD-2025-018', parcel: 'P-001 (Sector 12)', status: 'Encroachment', date: '24 May 2025 14:30', c: 'text-red-600' },
+              { rid: 'RPT-2025-017', aid: 'AUD-2025-017', parcel: 'P-002 (Sector 7)', status: 'Clear', date: '24 May 2025 11:20', c: 'text-green-600' },
+              { rid: 'RPT-2025-016', aid: 'AUD-2025-016', parcel: 'P-003 (Sector 3)', status: 'Variance', date: '23 May 2025 16:15', c: 'text-yellow-600' }
             ].map((r, i) => (
               <tr key={i} className="hover:bg-gray-50">
                 <td className="px-6 py-4 font-medium">{r.rid}</td>
