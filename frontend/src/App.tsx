@@ -7,7 +7,9 @@ import {
   FileCheck, 
   FileText, 
   User, 
-  Layers 
+  Layers,
+  Sun,
+  Moon
 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Parcels from './pages/Parcels';
@@ -17,6 +19,7 @@ import Reports from './pages/Reports';
 export default function App() {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [initialAuditStep, setInitialAuditStep] = useState<string>('select');
+  const [darkMode, setDarkMode] = useState<boolean>(false);
 
   const handleTabChange = (tabName: string) => {
     setActiveTab(tabName);
@@ -48,13 +51,16 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-gray-900">
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
+    <div className={`flex h-screen font-sans transition-colors duration-200 ${darkMode ? 'dark bg-gray-950 text-gray-100' : 'bg-gray-50 text-gray-900'}`}>
+      <div className={`w-64 border-r flex flex-col justify-between flex-shrink-0 transition-colors duration-200 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-white border-gray-200'}`}>
         <div>
-          <div className="p-6 flex items-center gap-2">
-            <Layers className="w-6 h-6 text-green-600" />
-            <span className="text-xl font-bold">AeroBhumi<span className="text-green-600">AI</span></span>
+          <div className="p-6 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Layers className="w-6 h-6 text-green-600" />
+              <span className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>AeroBhumi<span className="text-green-600">AI</span></span>
+            </div>
           </div>
+
           <nav className="mt-2 flex flex-col gap-1 px-3">
             {[
               { name: 'Dashboard', icon: LayoutDashboard },
@@ -70,6 +76,8 @@ export default function App() {
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === item.name 
                     ? 'bg-green-600 text-white shadow-sm' 
+                    : darkMode
+                    ? 'text-gray-300 hover:bg-gray-800 hover:text-green-400'
                     : 'text-gray-600 hover:bg-green-50 hover:text-green-700'
                 }`}
               >
@@ -79,19 +87,35 @@ export default function App() {
             ))}
           </nav>
         </div>
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700">
-              <User className="w-4 h-4" />
+
+        <div className={`p-4 border-t transition-colors duration-200 ${darkMode ? 'border-gray-800' : 'border-gray-200'}`}>
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700">
+                <User className="w-4 h-4" />
+              </div>
+              <div className="text-left">
+                <p className={`text-sm font-bold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Demo User</p>
+                <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>Administrator</p>
+              </div>
             </div>
-            <div className="text-left">
-              <p className="text-sm font-bold text-gray-900">Demo User</p>
-              <p className="text-xs text-gray-500">Administrator</p>
-            </div>
+
+            {/* Light / Dark Mode Toggle Button */}
+            <button
+              onClick={() => setDarkMode(!darkMode)}
+              className={`p-2 rounded-lg transition-colors border ${
+                darkMode 
+                  ? 'bg-gray-800 text-amber-400 border-gray-700 hover:bg-gray-700' 
+                  : 'bg-gray-100 text-gray-600 border-gray-200 hover:bg-gray-200'
+              }`}
+              title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
           </div>
         </div>
       </div>
-      <div className="flex-1 overflow-auto bg-gray-50">
+      <div className={`flex-1 overflow-auto transition-colors duration-200 ${darkMode ? 'bg-gray-950' : 'bg-gray-50'}`}>
         {renderContent()}
       </div>
     </div>
