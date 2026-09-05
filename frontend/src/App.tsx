@@ -31,7 +31,7 @@ function RecenterButton({ centerPos }: { centerPos: [number, number] }) {
   const map = useMap();
   return (
     <div className="leaflet-top leaflet-left" style={{ top: '80px', left: '10px', position: 'absolute', zIndex: 1000 }}>
-      <div className="leaflet-control leaflet-bar shadow-md border-none">
+      <div className="leaflet-control leaflet-bar border-none shadow-md bg-white rounded">
         <a 
           href="#" 
           title="Recenter on Drone Scan" 
@@ -42,10 +42,10 @@ function RecenterButton({ centerPos }: { centerPos: [number, number] }) {
             map.setView(centerPos, 18); 
           }}
           onDoubleClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-center bg-white hover:bg-gray-100 text-gray-700 hover:text-black transition-colors select-none"
-          style={{ width: '34px', height: '34px' }}
+          className="text-gray-700 hover:text-black transition-colors select-none"
+          style={{ width: '34px', height: '34px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'white', borderRadius: '4px' }}
         >
-          <LocateFixed className="w-5 h-5" />
+          <LocateFixed style={{ width: '18px', height: '18px' }} />
         </a>
       </div>
     </div>
