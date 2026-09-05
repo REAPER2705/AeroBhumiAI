@@ -233,14 +233,42 @@ export default function App() {
               {/* Analytics Section */}
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 mb-6 shadow-sm transition-colors">
                 <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 mb-4 flex items-center gap-2"><PieChart className="w-4 h-4 text-indigo-500" /> Scan Analytics</h3>
-                <div className="flex justify-between items-end mb-2">
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Scanned: 247 Parcels</span>
-                  <span className="text-xs font-bold text-rose-500">12 Conflicts (4.8%)</span>
-                </div>
-                {/* Visual Progress Bar */}
-                <div className="w-full h-2.5 flex rounded-full overflow-hidden mb-5 bg-slate-100 dark:bg-slate-800">
-                  <div className="bg-emerald-500 h-full" style={{ width: '95.2%' }} title="Safe Parcels"></div>
-                  <div className="bg-rose-500 h-full" style={{ width: '4.8%' }} title="Encroached Parcels"></div>
+                
+                <div className="flex items-center gap-5 mb-5">
+                  {/* SVG Doughnut Chart */}
+                  <div className="relative w-20 h-20 flex-shrink-0">
+                    <svg viewBox="0 0 36 36" className="w-20 h-20 transform -rotate-90 drop-shadow-sm">
+                      {/* Safe (Emerald) Background */}
+                      <circle cx="18" cy="18" r="15.9155" fill="transparent" stroke="#10b981" strokeWidth="4.5" opacity="0.2"></circle>
+                      <circle cx="18" cy="18" r="15.9155" fill="transparent" stroke="#10b981" strokeWidth="4.5" strokeDasharray="95.2 4.8" strokeDashoffset="0"></circle>
+                      {/* Encroachment (Rose) Foreground */}
+                      <circle cx="18" cy="18" r="15.9155" fill="transparent" stroke="#f43f5e" strokeWidth="4.5" strokeDasharray="4.8 95.2" strokeDashoffset="-95.2"></circle>
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 -mb-1">Safe</span>
+                      <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">95%</span>
+                    </div>
+                  </div>
+                  
+                  {/* Legend */}
+                  <div className="flex flex-col gap-2.5 flex-1 border-l border-slate-100 dark:border-slate-800 pl-4">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-400">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm"></span> Validated
+                      </span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">235</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-400">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm"></span> Conflicts
+                      </span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">12</span>
+                    </div>
+                    <div className="pt-1 mt-1 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-xs">
+                      <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px]">Total Scanned</span>
+                      <span className="font-black text-slate-700 dark:text-slate-300">247</span>
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
