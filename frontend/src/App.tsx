@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MapContainer, TileLayer, LayersControl, Polygon, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { UploadCloud, Map as MapIcon, AlertTriangle, CheckCircle, Layers, FileText, Activity, Search, X, Download } from "lucide-react";
+import { UploadCloud, Map as MapIcon, AlertTriangle, CheckCircle, Layers, FileText, Activity, Search, X, Download, Moon, Sun, DownloadCloud, PieChart } from "lucide-react";
 
 // Mock Data
 const LEGAL_PARCELS = [
@@ -35,6 +35,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [flyToPos, setFlyToPos] = useState<[number, number] | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,19 +76,34 @@ export default function App() {
     setFlyToPos(null);
   };
 
+  const handleExportCSV = () => {
+    const headers = "Plot Number,Owner,Status,Legal Area (sq m),Detected Area (sq m),Excess (sq m)\n";
+    const rows = AI_PARCELS.map(p => {
+      const legal = LEGAL_PARCELS.find(l => l.plot === p.plot);
+      return `${p.plot},${legal?.owner || 'Unknown'},${p.type === 'ok' ? 'Safe' : 'Encroached'},${legal?.area || 0},${p.area},${p.excess}`;
+    }).join("\n");
+    
+    const blob = new Blob([headers + rows], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `AeroBhumiAI_Audit_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
+
   // Filter encroachments based on search query
   const filteredEncroachments = AI_PARCELS.filter(p => 
     p.type === 'encroachment' && p.plot.includes(searchQuery)
   );
 
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-800 font-sans overflow-hidden">
+    <div className={`flex h-screen font-sans overflow-hidden ${isDarkMode ? 'dark' : ''}`}>
       
       {/* Sidebar */}
-      <div className="w-[420px] bg-white border-r border-gray-200 flex flex-col shadow-xl z-[1000] relative">
+      <div className="w-[440px] bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col shadow-2xl z-[1000] relative transition-colors duration-300">
         
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 bg-blue-900 text-white">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-800 bg-blue-900 dark:bg-gray-950 text-white flex justify-between items-center transition-colors duration-300">
           <div className="flex items-center gap-3">
             <MapIcon className="w-8 h-8 text-blue-400" />
             <div>
@@ -95,6 +111,13 @@ export default function App() {
               <p className="text-xs text-blue-200 uppercase tracking-wider font-semibold mt-1">SIH 2026 - PS 26012</p>
             </div>
           </div>
+          <button 
+            onClick={() => setIsDarkMode(!isDarkMode)} 
+            className="p-2 rounded-full hover:bg-white/10 transition"
+            title="Toggle Dark Mode"
+          >
+            {isDarkMode ? <Sun className="w-5 h-5 text-yellow-300" /> : <Moon className="w-5 h-5 text-blue-200" />}
+          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
@@ -107,11 +130,11 @@ export default function App() {
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
                 onClick={handleBrowseClick}
-                className="border-2 border-dashed border-blue-300 rounded-xl p-8 flex flex-col items-center justify-center bg-blue-50/50 hover:bg-blue-100 transition cursor-pointer group"
+                className="border-2 border-dashed border-blue-300 dark:border-gray-700 rounded-xl p-8 flex flex-col items-center justify-center bg-blue-50/50 dark:bg-gray-800/50 hover:bg-blue-100 dark:hover:bg-gray-800 transition cursor-pointer group"
               >
-                <UploadCloud className="w-12 h-12 text-blue-500 mb-4 group-hover:scale-110 transition-transform" />
-                <p className="text-sm font-semibold text-gray-700">Drag & Drop Drone Imagery</p>
-                <p className="text-xs text-gray-500 mt-2 text-center">Supports .TIF, .PNG, .JPG (Max 50MB)</p>
+                <UploadCloud className="w-12 h-12 text-blue-500 dark:text-blue-400 mb-4 group-hover:scale-110 transition-transform" />
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">Drag & Drop Drone Imagery</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">Supports .TIF, .PNG, .JPG (Max 50MB)</p>
                 <button className="mt-6 px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition pointer-events-none">
                   Browse Files
                 </button>
@@ -123,13 +146,13 @@ export default function App() {
           {(status === 'uploading' || status === 'analyzing') && (
             <div className="flex flex-col items-center justify-center py-12">
               <Activity className="w-12 h-12 text-blue-500 animate-pulse mb-4" />
-              <h3 className="text-lg font-bold text-gray-800">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white">
                 {status === 'uploading' ? 'Uploading Drone Data...' : 'AI Segmenting Parcels...'}
               </h3>
-              <p className="text-sm text-gray-500 mt-2 text-center font-mono bg-gray-100 px-2 py-1 rounded">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 text-center font-mono bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                 {selectedFileName}
               </p>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-6 overflow-hidden">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-6 overflow-hidden">
                 <div className="bg-blue-600 h-2 rounded-full animate-[pulse_2s_ease-in-out_infinite]" style={{ width: status === 'uploading' ? '40%' : '85%' }}></div>
               </div>
             </div>
@@ -146,40 +169,54 @@ export default function App() {
                   placeholder="Search Plot Number..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm shadow-sm"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-sm transition-colors"
                 />
                 <Search className="w-4 h-4 text-gray-400 absolute left-4 top-3.5" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl text-center">
-                  <p className="text-xs text-gray-500 uppercase font-bold">Parcels Found</p>
-                  <p className="text-2xl font-black text-gray-800 mt-1">247</p>
+              {/* Analytics Section */}
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6 shadow-sm transition-colors">
+                <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2"><PieChart className="w-4 h-4" /> Scan Analytics</h3>
+                <div className="flex justify-between items-end mb-2">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Total Scanned: 247 Parcels</span>
+                  <span className="text-xs font-bold text-red-500">12 Conflicts (4.8%)</span>
                 </div>
-                <div className="bg-red-50 border border-red-200 p-4 rounded-xl text-center">
-                  <p className="text-xs text-red-500 uppercase font-bold">Conflicts</p>
-                  <p className="text-2xl font-black text-red-700 mt-1">12</p>
+                {/* Visual Progress Bar */}
+                <div className="w-full h-3 flex rounded-full overflow-hidden mb-4 bg-gray-100">
+                  <div className="bg-green-500 h-full" style={{ width: '95.2%' }} title="Safe Parcels"></div>
+                  <div className="bg-red-500 h-full" style={{ width: '4.8%' }} title="Encroached Parcels"></div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 p-3 rounded-lg text-center transition-colors">
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-bold">Total Area</p>
+                    <p className="text-xl font-black text-gray-800 dark:text-white mt-0.5">1.2 km²</p>
+                  </div>
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 p-3 rounded-lg text-center transition-colors">
+                    <p className="text-[10px] text-red-500 dark:text-red-400 uppercase font-bold">Excess Detected</p>
+                    <p className="text-xl font-black text-red-700 dark:text-red-400 mt-0.5">47 m²</p>
+                  </div>
                 </div>
               </div>
 
               {/* Toggles */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6 shadow-sm">
-                <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2"><Layers className="w-4 h-4" /> Map Layers</h3>
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6 shadow-sm transition-colors">
+                <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2"><Layers className="w-4 h-4" /> Map Layers</h3>
                 <div className="flex flex-col gap-3">
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" checked={showLegal} onChange={(e) => setShowLegal(e.target.checked)} className="w-4 h-4 text-blue-600 rounded" />
-                    <span className="text-sm font-medium text-gray-700 flex items-center">Bhu-Naksha Records <span className="inline-block w-3 h-3 bg-blue-500 ml-2 rounded-sm opacity-50"></span></span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">Bhu-Naksha Records <span className="inline-block w-3 h-3 bg-blue-500 ml-2 rounded-sm opacity-50"></span></span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input type="checkbox" checked={showAI} onChange={(e) => setShowAI(e.target.checked)} className="w-4 h-4 text-blue-600 rounded" />
-                    <span className="text-sm font-medium text-gray-700 flex items-center">AI Detected Area <span className="inline-block w-3 h-3 bg-red-500 ml-2 rounded-sm opacity-50"></span></span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">AI Detected Area <span className="inline-block w-3 h-3 bg-red-500 ml-2 rounded-sm opacity-50"></span></span>
                   </label>
                 </div>
               </div>
 
               {/* Encroachment List */}
-              <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-red-500" /> Critical Encroachments</h3>
-              <div className="flex flex-col gap-3 max-h-64 overflow-y-auto pr-1">
+              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-3 flex items-center gap-2"><AlertTriangle className="w-4 h-4 text-red-500" /> Critical Encroachments</h3>
+              <div className="flex flex-col gap-3 max-h-56 overflow-y-auto pr-1">
                 {filteredEncroachments.length === 0 ? (
                   <p className="text-sm text-gray-500 italic">No matching plots found.</p>
                 ) : (
@@ -187,21 +224,21 @@ export default function App() {
                     <div 
                       key={enc.id}
                       onClick={() => setFlyToPos(enc.center as [number, number])}
-                      className="bg-white border-l-4 border-red-500 shadow-sm rounded-r-lg p-4 cursor-pointer hover:bg-red-50 transition border border-y-gray-100 border-r-gray-100"
+                      className="bg-white dark:bg-gray-800 border-l-4 border-red-500 shadow-sm rounded-r-lg p-4 cursor-pointer hover:bg-red-50 dark:hover:bg-gray-700 transition border border-y-gray-100 dark:border-y-gray-700 border-r-gray-100 dark:border-r-gray-700"
                     >
                       <div className="flex justify-between items-start">
-                        <h4 className="font-bold text-gray-900">Plot {enc.plot}</h4>
-                        <span className="bg-red-100 text-red-700 text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded">High Risk</span>
+                        <h4 className="font-bold text-gray-900 dark:text-white">Plot {enc.plot}</h4>
+                        <span className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded">High Risk</span>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">Owner: Ramesh Sharma</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Owner: Ramesh Sharma</p>
                       <div className="mt-3 flex gap-4 text-sm">
                         <div>
-                          <p className="text-gray-500 text-xs">AI Detected</p>
-                          <p className="font-semibold text-red-600">{enc.area} m²</p>
+                          <p className="text-gray-500 dark:text-gray-400 text-xs">AI Detected</p>
+                          <p className="font-semibold text-red-600 dark:text-red-400">{enc.area} m²</p>
                         </div>
                         <div>
-                          <p className="text-gray-500 text-xs">Excess</p>
-                          <p className="font-semibold text-red-600">+{enc.excess} m²</p>
+                          <p className="text-gray-500 dark:text-gray-400 text-xs">Excess</p>
+                          <p className="font-semibold text-red-600 dark:text-red-400">+{enc.excess} m²</p>
                         </div>
                       </div>
                     </div>
@@ -209,11 +246,16 @@ export default function App() {
                 )}
               </div>
               
-              <button onClick={() => setShowReportModal(true)} className="w-full mt-6 py-3 bg-gray-900 text-white text-sm font-bold rounded-lg hover:bg-gray-800 transition flex items-center justify-center gap-2 shadow-md">
-                <FileText className="w-4 h-4" /> Generate Official Report
-              </button>
+              <div className="grid grid-cols-2 gap-3 mt-6">
+                <button onClick={() => setShowReportModal(true)} className="w-full py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-bold rounded-lg hover:bg-gray-800 dark:hover:bg-gray-100 transition flex items-center justify-center gap-2 shadow-md">
+                  <FileText className="w-4 h-4" /> Report Modal
+                </button>
+                <button onClick={handleExportCSV} className="w-full py-3 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 transition flex items-center justify-center gap-2 shadow-md">
+                  <DownloadCloud className="w-4 h-4" /> Export CSV
+                </button>
+              </div>
               
-              <button onClick={handleReset} className="w-full mt-3 py-2 text-blue-600 text-sm font-bold hover:underline transition flex items-center justify-center">
+              <button onClick={handleReset} className="w-full mt-4 py-2 text-blue-600 dark:text-blue-400 text-sm font-bold hover:underline transition flex items-center justify-center">
                 Scan Another Image
               </button>
             </div>
@@ -222,7 +264,7 @@ export default function App() {
       </div>
 
       {/* Map Area */}
-      <div className="flex-1 relative z-0 bg-gray-100">
+      <div className="flex-1 relative z-0 bg-gray-100 dark:bg-gray-900">
         <MapContainer center={[18.5205, 73.8572]} zoom={18} style={{ height: "100%", width: "100%" }}>
           <MapFlyTo centerPos={flyToPos} />
           
@@ -292,22 +334,22 @@ export default function App() {
       {/* Report Modal */}
       {showReportModal && (
         <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
             
             {/* Modal Header */}
-            <div className="bg-gray-100 border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-blue-600" />
+            <div className="bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center transition-colors">
+              <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Cadastral Discrepancy Report
               </h2>
-              <button onClick={() => setShowReportModal(false)} className="text-gray-400 hover:text-gray-700 transition">
+              <button onClick={() => setShowReportModal(false)} className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition">
                 <X className="w-6 h-6" />
               </button>
             </div>
             
             {/* Modal Body (Fake Document) */}
-            <div className="p-8 overflow-y-auto bg-gray-200 flex-1">
-              <div className="bg-white p-10 border border-gray-300 shadow-sm mx-auto max-w-lg font-serif">
+            <div className="p-8 overflow-y-auto bg-gray-200 dark:bg-gray-950 flex-1 transition-colors">
+              <div className="bg-white p-10 border border-gray-300 shadow-sm mx-auto max-w-lg font-serif text-gray-900">
                 <div className="text-center mb-8 border-b-2 border-gray-800 pb-4">
                   <h1 className="text-xl font-black uppercase tracking-widest text-gray-900">Department of Land Resources</h1>
                   <p className="text-sm font-bold text-gray-600 mt-1 uppercase">Government of India</p>
@@ -347,8 +389,8 @@ export default function App() {
             </div>
 
             {/* Modal Footer */}
-            <div className="bg-gray-100 border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
-              <button onClick={() => setShowReportModal(false)} className="px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-200 rounded-lg transition">
+            <div className="bg-gray-100 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-end gap-3 transition-colors">
+              <button onClick={() => setShowReportModal(false)} className="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition">
                 Cancel
               </button>
               <button className="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
