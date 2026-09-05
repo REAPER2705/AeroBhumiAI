@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MapContainer, TileLayer, LayersControl, Polygon, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { UploadCloud, Map as MapIcon, AlertTriangle, CheckCircle, Layers, FileText, Activity, Search, X, Download, Moon, Sun, DownloadCloud, PieChart, Target } from "lucide-react";
+import { UploadCloud, Map as MapIcon, AlertTriangle, CheckCircle, Layers, FileText, Activity, Search, X, Download, Moon, Sun, DownloadCloud, PieChart, LocateFixed } from "lucide-react";
 // @ts-ignore
 import html2pdf from "html2pdf.js";
 
@@ -31,15 +31,21 @@ function RecenterButton({ centerPos }: { centerPos: [number, number] }) {
   const map = useMap();
   return (
     <div className="leaflet-top leaflet-left" style={{ top: '80px', left: '10px', position: 'absolute', zIndex: 1000 }}>
-      <div className="leaflet-control leaflet-bar">
+      <div className="leaflet-control leaflet-bar shadow-md border-none">
         <a 
           href="#" 
           title="Recenter on Drone Scan" 
           role="button" 
-          onClick={(e) => { e.preventDefault(); map.flyTo(centerPos, 18, { animate: true, duration: 1.5 }); }}
-          className="flex items-center justify-center bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 w-[34px] h-[34px] transition-colors"
+          onClick={(e) => { 
+            e.preventDefault(); 
+            e.stopPropagation(); 
+            map.setView(centerPos, 18); 
+          }}
+          onDoubleClick={(e) => e.stopPropagation()}
+          className="flex items-center justify-center bg-white hover:bg-gray-100 text-gray-700 hover:text-black transition-colors select-none"
+          style={{ width: '34px', height: '34px' }}
         >
-          <Target className="w-5 h-5" />
+          <LocateFixed className="w-5 h-5" />
         </a>
       </div>
     </div>
