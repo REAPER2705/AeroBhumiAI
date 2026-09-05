@@ -7,42 +7,64 @@ import L from 'leaflet';
 
 interface MapWorkspaceProps {
   parcelGeometry?: any;
+  houseGeometry?: any;
   onHouseDrawn?: (geojson: any) => void;
   onHouseCleared?: () => void;
   showEncroachment?: boolean;
 }
 
-export default function MapWorkspace({ parcelGeometry, onHouseDrawn, onHouseCleared, showEncroachment = false }: MapWorkspaceProps) {
+export default function MapWorkspace({ parcelGeometry, houseGeometry, onHouseDrawn, onHouseCleared, showEncroachment = false }: MapWorkspaceProps) {
   const mapRef = useRef<any>(null);
 
-  // Convert parcelGeometry to Leaflet LatLng[] if it's GeoJSON
-  const [parcelCoords, setParcelCoords] = useState<any[]>([]);
-  const [encroachmentCoords, setEncroachmentCoords] = useState<any[]>([]);
+  // Default demo coordinates around Nagpur (21.1400, 79.0800) matching prototype
+  const defaultParcelCoords = [
+    [21.1400, 79.0800],
+    [21.1405, 79.0800],
+    [21.1405, 79.0805],
+    [21.1400, 79.0805]
+  ];
+
+  const defaultHouseCoords = [
+    [21.1401, 79.0801],
+    [21.1406, 79.0801],
+    [21.1406, 79.0806],
+    [21.1401, 79.0806]
+  ];
+
+  const defaultEncroachmentCoords = [
+    [21.1405, 79.0801],
+    [21.1406, 79.0801],
+    [21.1406, 79.0806],
+    [21.1405, 79.0806]
+  ];
+
+  const [parcelCoords, setParcelCoords] = useState<any[]>(defaultParcelCoords);
+  const [houseCoords, setHouseCoords] = useState<any[]>(defaultHouseCoords);
+  const [encroachmentCoords, setEncroachmentCoords] = useState<any[]>(defaultEncroachmentCoords);
 
   useEffect(() => {
-    if (parcelGeometry && parcelGeometry.type === 'Polygon') {
+    if (parcelGeometry && parcelGeometry.type === 'Polygon' && parcelGeometry.coordinates?.[0]?.length) {
       const coords = parcelGeometry.coordinates[0].map((coord: any[]) => [coord[1], coord[0]]);
       setParcelCoords(coords);
-
-      // Create a simulated blue encroachment polygon overlapping the south-east boundary
-      if (coords.length > 2) {
-        const p1 = coords[1];
-        const p2 = coords[2];
-        setEncroachmentCoords([
-          p1,
-          [p1[0] + 0.0003, p1[1] + 0.0003],
-          [p2[0] + 0.0003, p2[1] + 0.0003],
-          p2
-        ]);
-      }
     }
   }, [parcelGeometry]);
+
+  useEffect(() => {
+    if (houseGeometry && houseGeometry.type === 'Polygon' && houseGeometry.coordinates?.[0]?.length) {
+      const coords = houseGeometry.coordinates[0].map((coord: any[]) => [coord[1], coord[0]]);
+      setHouseCoords(coords);
+    }
+  }, [houseGeometry]);
 
   const onCreated = (e: any) => {
     const { layerType, layer } = e;
     if (layerType === 'polygon' && onHouseDrawn) {
       const geojson = layer.toGeoJSON();
       onHouseDrawn(geojson.geometry);
+      if (geojson.geometry?.coordinates?.[0]) {
+        const coords = geojson.geometry.coordinates[0].map((coord: any[]) => [coord[1], coord[0]]);
+        setHouseCoords(coords);
+      }
     }
   };
 
@@ -50,17 +72,19 @@ export default function MapWorkspace({ parcelGeometry, onHouseDrawn, onHouseClea
     if (onHouseCleared) onHouseCleared();
   };
 
+  const mapCenter = parcelCoords.length > 0 ? parcelCoords[0] : [21.1400, 79.0800];
+
   return (
     <div className="w-full h-full relative z-0">
       <MapContainer 
-        center={parcelCoords.length > 0 ? parcelCoords[0] : [18.5205, 73.8572]} 
+        center={mapCenter} 
         zoom={18} 
         style={{ height: "100%", width: "100%" }} 
         ref={mapRef}
       >
         <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" />
         
-        {/* Official Parcel Boundary (Green) */}
+        {/* Official Legal Parcel Boundary (Green) */}
         {parcelCoords.length > 0 && (
           <Polygon 
             positions={parcelCoords} 
@@ -68,11 +92,19 @@ export default function MapWorkspace({ parcelGeometry, onHouseDrawn, onHouseClea
           />
         )}
 
-        {/* Encroachment Overlay (Blue/Purple) */}
+        {/* Proposed Building Footprint (Red) */}
+        {houseCoords.length > 0 && (
+          <Polygon 
+            positions={houseCoords} 
+            pathOptions={{ color: '#ef4444', weight: 2, fillColor: '#ef4444', fillOpacity: 0.45 }} 
+          />
+        )}
+
+        {/* Outside Encroachment Area (Blue/Purple Overlay) */}
         {showEncroachment && encroachmentCoords.length > 0 && (
           <Polygon 
             positions={encroachmentCoords} 
-            pathOptions={{ color: '#3b82f6', weight: 2, fillColor: '#3b82f6', fillOpacity: 0.6 }} 
+            pathOptions={{ color: '#3b82f6', weight: 2, fillColor: '#3b82f6', fillOpacity: 0.65 }} 
           />
         )}
 

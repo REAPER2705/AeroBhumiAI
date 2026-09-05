@@ -265,6 +265,7 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
           <div className="flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden relative shadow-sm">
             <MapWorkspace 
               parcelGeometry={selectedParcel?.geometry} 
+              houseGeometry={houseGeometry}
               onHouseDrawn={setHouseGeometry} 
               onHouseCleared={() => setHouseGeometry(null)} 
             />
@@ -329,6 +330,7 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
             <div className="flex-1 relative">
               <MapWorkspace 
                 parcelGeometry={selectedParcel?.geometry} 
+                houseGeometry={houseGeometry}
                 onHouseDrawn={setHouseGeometry} 
                 onHouseCleared={() => setHouseGeometry(null)} 
                 showEncroachment={true}
