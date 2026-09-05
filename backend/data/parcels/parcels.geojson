@@ -1,0 +1,68 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-001",
+        "area": 1200,
+        "boundary_status": "OFFICIAL",
+        "owner": "State Government"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.0800, 21.1400],
+            [79.0805, 21.1400],
+            [79.0805, 21.1405],
+            [79.0800, 21.1405],
+            [79.0800, 21.1400]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-002",
+        "area": 950,
+        "boundary_status": "OFFICIAL",
+        "owner": "Municipal Corp"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.0810, 21.1410],
+            [79.0814, 21.1410],
+            [79.0814, 21.1414],
+            [79.0810, 21.1414],
+            [79.0810, 21.1410]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-003",
+        "area": 1350,
+        "boundary_status": "OFFICIAL",
+        "owner": "Private"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.0820, 21.1420],
+            [79.0826, 21.1420],
+            [79.0826, 21.1426],
+            [79.0820, 21.1426],
+            [79.0820, 21.1420]
+          ]
+        ]
+      }
+    }
+  ]
+}
