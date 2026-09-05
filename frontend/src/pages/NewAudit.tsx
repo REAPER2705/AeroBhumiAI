@@ -462,45 +462,75 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
   }
 
   const handleDownloadPDF = (reportId: string = 'RPT-2025-018') => {
-    const content = `============================================================
-AEROBHUMIAI - LAND COMPLIANCE AUDIT REPORT
-============================================================
-Report ID: ${reportId}
-Parcel ID: ${selectedParcelId || 'PLOT-45'} (Sector 12)
-Audit ID: AUD-2025-018
-Location: Nagpur, Maharashtra
-Audit Date: 24 May 2025, 14:30
-Status: ENCROACHMENT DETECTED
+    const pdfContent = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 500 >>
+stream
+BT
+/F1 18 Tf
+50 720 Td
+(AEROBHUMIAI - LAND COMPLIANCE AUDIT REPORT) Tj
+/F1 12 Tf
+0 -40 Td
+(Report ID: ${reportId}) Tj
+0 -20 Td
+(Parcel ID: ${selectedParcelId || 'PLOT-45'}) Tj
+0 -20 Td
+(Location: Nagpur, Maharashtra) Tj
+0 -20 Td
+(Audit Date: 24 May 2025, 14:30) Tj
+0 -20 Td
+(Status: ENCROACHMENT DETECTED) Tj
+0 -30 Td
+(SUMMARY METRICS:) Tj
+0 -20 Td
+(Parcel Area: 500.00 sq.m.) Tj
+0 -20 Td
+(Building Area Inside: 437.55 sq.m.) Tj
+0 -20 Td
+(Building Area Outside: 62.45 sq.m. [12.49%]) Tj
+0 -20 Td
+(IoU Score: 0.78 [78.00%]) Tj
+0 -30 Td
+(AI DIAGNOSIS & RECOMMENDATION:) Tj
+0 -20 Td
+(1. Re-align the building within legal parcel boundary.) Tj
+0 -20 Td
+(2. Reduce the building footprint to eliminate encroachment.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000244 00000 n 
+0000000795 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+865
+%%EOF`;
 
-SUMMARY METRICS:
-------------------------------------------------------------
-Parcel Area: 500.00 sq.m.
-Building Area (Inside): 437.55 sq.m.
-Building Area (Outside): 62.45 sq.m.
-Outside Percentage: 12.49%
-IoU Score: 0.78 (78.00%)
-
-AI DIAGNOSIS (GEMINI AI):
-------------------------------------------------------------
-The proposed building footprint extends beyond the legal parcel boundary 
-in the south-east direction by approximately 62.45 sq.m. (12.49%). 
-This constitutes an encroachment under municipal land compliance regulations.
-
-RECOMMENDED RESOLUTION:
-------------------------------------------------------------
-1. Re-align the proposed building within the legal parcel boundary.
-2. Reduce the building footprint to eliminate the 62.45 sq.m. encroachment.
-3. Re-submit revised architectural plans for official approval.
-
-============================================================
-Verified by AeroBhumiAI Spatial AI Engine
-============================================================`;
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const blob = new Blob([pdfContent], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${reportId}_Audit_Report.txt`;
+    a.download = `${reportId}_Audit_Report.pdf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

@@ -11,41 +11,89 @@ export default function Reports() {
     { id: 'RPT-2025-013', auditId: 'AUD-2025-013', parcel: 'PLOT-27 (Sector 4)', status: 'Encroachment', date: '22 May 2025 12:05', statusBg: 'bg-red-50 text-red-600 border-red-100' }
   ]);
 
-  const handleDownloadReport = (reportId: string, parcelInfo: string) => {
-    const content = `============================================================
-AEROBHUMIAI - LAND COMPLIANCE AUDIT REPORT
-============================================================
-Report ID: ${reportId}
-Parcel: ${parcelInfo}
-Audit Date: 24 May 2025, 14:30
-Status: AUDIT COMPLETED
+  const handleDownloadReport = (reportId: string, parcelInfo: string, format: 'pdf' | 'csv' = 'pdf') => {
+    if (format === 'csv') {
+      const csvContent = `Report ID,Audit ID,Parcel,Status,Generated Date,Parcel Area (sq.m.),Inside Area (sq.m.),Outside Area (sq.m.),Outside Percentage,IoU Score\n"${reportId}","AUD-${reportId.replace('RPT-', '')}","${parcelInfo}","ENCROACHMENT DETECTED","24 May 2025 14:30",500.00,437.55,62.45,12.49%,0.78`;
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${reportId}_Audit_Report.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      const pdfContent = `%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 450 >>
+stream
+BT
+/F1 18 Tf
+50 720 Td
+(AEROBHUMIAI - LAND COMPLIANCE AUDIT REPORT) Tj
+/F1 12 Tf
+0 -40 Td
+(Report ID: ${reportId}) Tj
+0 -20 Td
+(Parcel: ${parcelInfo}) Tj
+0 -20 Td
+(Audit Date: 24 May 2025, 14:30) Tj
+0 -20 Td
+(Status: ENCROACHMENT DETECTED) Tj
+0 -30 Td
+(SUMMARY METRICS:) Tj
+0 -20 Td
+(Parcel Area: 500.00 sq.m.  |  Inside Area: 437.55 sq.m.) Tj
+0 -20 Td
+(Outside Area: 62.45 sq.m.  |  Outside Percentage: 12.49%) Tj
+0 -20 Td
+(IoU Score: 0.78 (78.00%)) Tj
+0 -30 Td
+(AI DIAGNOSIS & RECOMMENDATION:) Tj
+0 -20 Td
+(1. Re-align the proposed building within legal parcel boundary.) Tj
+0 -20 Td
+(2. Reduce the building footprint to eliminate encroachment.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000244 00000 n 
+0000000745 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+815
+%%EOF`;
 
-SUMMARY METRICS:
-------------------------------------------------------------
-Parcel Area: 500.00 sq.m.
-Building Area (Inside Parcel): 437.55 sq.m.
-Building Area (Outside Parcel): 62.45 sq.m.
-Outside Percentage: 12.49%
-IoU Score: 0.78 (78.00%)
-
-AI DIAGNOSIS (GEMINI AI):
-------------------------------------------------------------
-Spatial pre-validation completed for parcel ${parcelInfo}.
-Compliance boundaries calculated by AeroBhumiAI GIS engine.
-
-============================================================
-Verified by AeroBhumiAI Platform
-============================================================`;
-
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${reportId}_Audit_Report.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const blob = new Blob([pdfContent], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${reportId}_Audit_Report.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   };
 
   return (
