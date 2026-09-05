@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { MapContainer, TileLayer, LayersControl, Polygon, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { UploadCloud, Map as MapIcon, AlertTriangle, CheckCircle, Layers, FileText, Activity, Search, X, Download, Moon, Sun, DownloadCloud, PieChart } from "lucide-react";
+import { UploadCloud, Map as MapIcon, AlertTriangle, CheckCircle, Layers, FileText, Activity, Search, X, Download, Moon, Sun, DownloadCloud, PieChart, Target } from "lucide-react";
 // @ts-ignore
 import html2pdf from "html2pdf.js";
 
@@ -25,6 +25,25 @@ function MapFlyTo({ centerPos }: { centerPos: [number, number] | null }) {
     }
   }, [centerPos, map]);
   return null;
+}
+
+function RecenterButton({ centerPos }: { centerPos: [number, number] }) {
+  const map = useMap();
+  return (
+    <div className="leaflet-top leaflet-left" style={{ top: '80px', left: '10px', position: 'absolute', zIndex: 1000 }}>
+      <div className="leaflet-control leaflet-bar">
+        <a 
+          href="#" 
+          title="Recenter on Drone Scan" 
+          role="button" 
+          onClick={(e) => { e.preventDefault(); map.flyTo(centerPos, 18, { animate: true, duration: 1.5 }); }}
+          className="flex items-center justify-center bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 w-[34px] h-[34px] transition-colors"
+        >
+          <Target className="w-5 h-5" />
+        </a>
+      </div>
+    </div>
+  );
 }
 
 export default function App() {
@@ -294,6 +313,7 @@ export default function App() {
       <div className="flex-1 relative z-0 bg-slate-100 dark:bg-slate-950">
         <MapContainer center={[18.5205, 73.8572]} zoom={18} style={{ height: "100%", width: "100%" }}>
           <MapFlyTo centerPos={flyToPos} />
+          {status === 'done' && <RecenterButton centerPos={[18.5205, 73.8572]} />}
           
           <LayersControl position="topright">
             <LayersControl.BaseLayer checked name="Satellite View">
