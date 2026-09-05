@@ -16,6 +16,7 @@ export default function NewAudit({ setActiveTab }: { setActiveTab: (tab: string)
   
   // Final audit result states
   const [auditResult, setAuditResult] = useState<any>(null);
+  const [reportGenerated, setReportGenerated] = useState<boolean>(false);
 
   useEffect(() => {
     apiClient.listParcels().then(res => {
@@ -222,8 +223,6 @@ export default function NewAudit({ setActiveTab }: { setActiveTab: (tab: string)
       </div>
     );
   }
-
-  const [reportGenerated, setReportGenerated] = useState<boolean>(false);
 
   const handleGenerateReport = async () => {
     setLoading(true);
