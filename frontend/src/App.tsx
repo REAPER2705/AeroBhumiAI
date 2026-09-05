@@ -245,8 +245,8 @@ export default function App() {
                       <circle cx="18" cy="18" r="15.9155" fill="transparent" stroke="#f43f5e" strokeWidth="4.5" strokeDasharray="4.8 95.2" strokeDashoffset="-95.2"></circle>
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400 -mb-1">Safe</span>
-                      <span className="text-sm font-black text-emerald-600 dark:text-emerald-400">95%</span>
+                      <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">Safe</span>
+                      <span className="text-base font-bold text-slate-700 dark:text-slate-200">95%</span>
                     </div>
                   </div>
                   
