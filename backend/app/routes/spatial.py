@@ -96,14 +96,14 @@ async def build_check(request: BuildCheckRequest):
         
         # Determine result state
         tolerance_m2 = float(os.getenv('SPATIAL_TOLERANCE_M2', '0.5'))
-        result_state = diagnosis_service.diagnose_result(metrics, tolerance_m2)
+        diagnosis = diagnosis_service.diagnose_result(metrics, tolerance_m2)
         
         # Get boundary status
         boundary_status = parcel_properties.get('boundary_status', 'UNKNOWN')
         
         return BuildCheckResponse(
             success=True,
-            result=result_state,
+            result=diagnosis.get('result', ''),
             metrics={
                 'house_area_m2': metrics['house_area_m2'],
                 'outside_area_m2': metrics['outside_area_m2'],
