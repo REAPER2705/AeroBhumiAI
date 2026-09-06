@@ -1,7 +1,7 @@
 """Spatial analysis and build check schemas."""
 
 from pydantic import BaseModel
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
 class BuildCheckRequest(BaseModel):
@@ -16,3 +16,4 @@ class BuildCheckResponse(BaseModel):
     result: str  # CLEAR, BOUNDARY_VARIANCE, POTENTIAL_BUILDING_ENCROACHMENT
     metrics: Dict[str, float]
     boundary_status: str
+    encroachment_geometry: Optional[Dict[str, Any]] = None  # The actual outside portion as GeoJSON

@@ -105,11 +105,14 @@ async def build_check(request: BuildCheckRequest):
             success=True,
             result=diagnosis.get('result', ''),
             metrics={
+                'parcel_area_m2': metrics['parcel_area_m2'],
                 'house_area_m2': metrics['house_area_m2'],
+                'intersection_area_m2': metrics['intersection_area_m2'],
                 'outside_area_m2': metrics['outside_area_m2'],
                 'outside_percentage': metrics['outside_percentage']
             },
-            boundary_status=boundary_status
+            boundary_status=boundary_status,
+            encroachment_geometry=metrics.get('encroachment_geometry')  # Return the actual outside geometry
         )
     
     except HTTPException:

@@ -8,12 +8,12 @@ import L from 'leaflet';
 interface MapWorkspaceProps {
   parcelGeometry?: any;
   houseGeometry?: any;
+  encroachmentGeometry?: any;  // Actual outside portion from API, replaces demo coords
   onHouseDrawn?: (geojson: any) => void;
   onHouseCleared?: () => void;
-  showEncroachment?: boolean;
 }
 
-export default function MapWorkspace({ parcelGeometry, houseGeometry, onHouseDrawn, onHouseCleared, showEncroachment = false }: MapWorkspaceProps) {
+export default function MapWorkspace({ parcelGeometry, houseGeometry, encroachmentGeometry, onHouseDrawn, onHouseCleared }: MapWorkspaceProps) {
   const mapRef = useRef<any>(null);
 
   // Default demo coordinates around Nagpur (21.1400, 79.0800) matching prototype
@@ -24,23 +24,9 @@ export default function MapWorkspace({ parcelGeometry, houseGeometry, onHouseDra
     [21.1400, 79.0805]
   ];
 
-  const defaultHouseCoords = [
-    [21.1401, 79.0801],
-    [21.1406, 79.0801],
-    [21.1406, 79.0806],
-    [21.1401, 79.0806]
-  ];
-
-  const defaultEncroachmentCoords = [
-    [21.1405, 79.0801],
-    [21.1406, 79.0801],
-    [21.1406, 79.0806],
-    [21.1405, 79.0806]
-  ];
-
   const [parcelCoords, setParcelCoords] = useState<any[]>(defaultParcelCoords);
-  const [houseCoords, setHouseCoords] = useState<any[]>(defaultHouseCoords);
-  const [encroachmentCoords, setEncroachmentCoords] = useState<any[]>(defaultEncroachmentCoords);
+  const [houseCoords, setHouseCoords] = useState<any[]>([]);
+  const [encroachmentCoords, setEncroachmentCoords] = useState<any[]>([]);
 
   useEffect(() => {
     if (parcelGeometry && parcelGeometry.type === 'Polygon' && parcelGeometry.coordinates?.[0]?.length) {
@@ -53,8 +39,26 @@ export default function MapWorkspace({ parcelGeometry, houseGeometry, onHouseDra
     if (houseGeometry && houseGeometry.type === 'Polygon' && houseGeometry.coordinates?.[0]?.length) {
       const coords = houseGeometry.coordinates[0].map((coord: any[]) => [coord[1], coord[0]]);
       setHouseCoords(coords);
+    } else {
+      setHouseCoords([]);
     }
   }, [houseGeometry]);
+
+  // Handle actual encroachment geometry from API
+  useEffect(() => {
+    if (encroachmentGeometry && encroachmentGeometry.type === 'Polygon' && encroachmentGeometry.coordinates?.[0]?.length) {
+      const coords = encroachmentGeometry.coordinates[0].map((coord: any[]) => [coord[1], coord[0]]);
+      setEncroachmentCoords(coords);
+    } else if (encroachmentGeometry && encroachmentGeometry.type === 'MultiPolygon' && encroachmentGeometry.coordinates?.length) {
+      // Handle MultiPolygon (union of outside areas)
+      const firstRing = encroachmentGeometry.coordinates[0][0];
+      const coords = firstRing.map((coord: any[]) => [coord[1], coord[0]]);
+      setEncroachmentCoords(coords);
+    } else {
+      // No encroachment or null geometry
+      setEncroachmentCoords([]);
+    }
+  }, [encroachmentGeometry]);
 
   const onCreated = (e: any) => {
     const { layerType, layer } = e;
@@ -101,7 +105,7 @@ export default function MapWorkspace({ parcelGeometry, houseGeometry, onHouseDra
         )}
 
         {/* Outside Encroachment Area (Blue/Purple Overlay) */}
-        {showEncroachment && encroachmentCoords.length > 0 && (
+        {encroachmentCoords.length > 0 && (
           <Polygon 
             positions={encroachmentCoords} 
             pathOptions={{ color: '#3b82f6', weight: 2, fillColor: '#3b82f6', fillOpacity: 0.65 }} 

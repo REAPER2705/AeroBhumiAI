@@ -21,56 +21,57 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
   }, [initialStep]);
   
   const [parcels, setParcels] = useState<Parcel[]>([]);
-  const [selectedParcelId, setSelectedParcelId] = useState<string>('PLOT-45');
-  const [selectedParcel, setSelectedParcel] = useState<any>({
-    parcel_id: 'PLOT-45',
-    plot_sector: 'Plot 45, Sector 12',
-    location: 'Nagpur, Maharashtra',
-    area: 500.00
-  });
+  const [selectedParcelId, setSelectedParcelId] = useState<string>('');
+  const [selectedParcel, setSelectedParcel] = useState<any>(null);
   
   const [houseGeometry, setHouseGeometry] = useState<any>(null);
-  const [buildCheckResult, setBuildCheckResult] = useState<BuildCheckResult | null>({
-    success: true,
-    result: 'POTENTIAL_BUILDING_ENCROACHMENT',
-    metrics: {
-      house_area_m2: 500.00,
-      outside_area_m2: 62.45,
-      outside_percentage: 12.49
-    },
-    boundary_status: 'OFFICIAL'
-  });
+  const [buildCheckResult, setBuildCheckResult] = useState<BuildCheckResult | null>(null);
   
-  const [auditResult, setAuditResult] = useState<any>({
-    success: true,
-    result: 'ENCROACHMENT DETECTED',
-    problem: 'Portion of the proposed construction lies outside the legal parcel boundary.',
-    summary: 'The analysis shows that the proposed building footprint extends beyond the legal parcel boundary in the south-east direction. Approximately 62.45 sq.m. (12.49%) of the construction lies outside the permissible limit. This constitutes encroachment as per land compliance regulations.',
-    recommended_action: 'Re-align the building within the parcel boundary.',
-    recommended_actions_list: [
-      'Re-align the building within the legal parcel boundary.',
-      'Reduce the footprint to eliminate the encroachment.',
-      'Obtain necessary NOC from adjacent land owner if applicable.',
-      'Re-submit the revised plan for compliance.'
-    ]
-  });
+  const [auditResult, setAuditResult] = useState<any>(null);
+  const [auditId, setAuditId] = useState<string>('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch list of parcels on mount
   useEffect(() => {
-    apiClient.listParcels().then(res => {
-      const data = Array.isArray(res.data) ? res.data : (res.data?.parcels || []);
-      if (data.length > 0) setParcels(data);
-    }).catch(() => {});
+    const fetchParcels = async () => {
+      try {
+        const res = await apiClient.listParcels();
+        const parcelsList = res.data || [];
+        setParcels(parcelsList);
+        // Set first parcel as default if available
+        if (parcelsList.length > 0) {
+          setSelectedParcelId(parcelsList[0].parcel_id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch parcels:', err);
+        setError('Failed to load parcels');
+      }
+    };
+    fetchParcels();
   }, []);
 
+  // Fetch selected parcel details when selectedParcelId changes
   useEffect(() => {
-    if (selectedParcelId) {
-      apiClient.getParcel(selectedParcelId).then(res => {
-        if (res.data) setSelectedParcel(res.data);
-      }).catch(() => {});
-    }
+    if (!selectedParcelId) return;
+    
+    const fetchParcelDetails = async () => {
+      try {
+        const res = await apiClient.getParcel(selectedParcelId);
+        if (res.data) {
+          setSelectedParcel(res.data);
+          // Clear stale data when parcel changes
+          setHouseGeometry(null);
+          setBuildCheckResult(null);
+          setAuditResult(null);
+        }
+      } catch (err) {
+        console.error('Failed to fetch parcel details:', err);
+        setError(`Failed to load parcel ${selectedParcelId}`);
+      }
+    };
+    fetchParcelDetails();
   }, [selectedParcelId]);
 
   const handleRunBuildCheck = async () => {
@@ -95,7 +96,10 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
     try {
       if (selectedParcelId && buildCheckResult) {
         const res = await apiClient.auditAnalyze(selectedParcelId, buildCheckResult);
-        if (res.data) setAuditResult(res.data);
+        if (res.data) {
+          setAuditResult(res.data);
+          setAuditId(res.data.audit_id || '');
+        }
       }
       setStep('analyze');
     } catch (err) {
@@ -121,7 +125,9 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
   const handleGenerateReport = async () => {
     setLoading(true);
     try {
-      await apiClient.generateReport(selectedParcelId || 'AUD-2025-018');
+      if (auditId) {
+        await apiClient.generateReport(auditId);
+      }
       setStep('generate_report');
     } catch (err) {
       setStep('generate_report');
@@ -191,22 +197,25 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
                 onChange={(e) => setSelectedParcelId(e.target.value)}
                 className="font-bold text-gray-900 border border-gray-300 rounded px-2 py-1 text-sm bg-gray-50"
               >
-                <option value="PLOT-45">PLOT-45</option>
-                <option value="P-001">P-001</option>
-                <option value="P-002">P-002</option>
-                <option value="P-003">P-003</option>
+                <option value="">-- Select a Parcel --</option>
+                {parcels.map((p) => (
+                  <option key={p.parcel_id} value={p.parcel_id}>
+                    {p.parcel_id}
+                  </option>
+                ))}
               </select>
-              <span className="text-xs text-gray-500">Plot 45, Sector 12, Nagpur, Maharashtra</span>
+              <span className="text-xs text-gray-500">
+                {selectedParcel?.parcel_id || 'No parcel selected'}
+              </span>
             </div>
           </div>
           <div className="text-right flex items-center gap-4">
             <div>
               <p className="text-xs text-gray-500 font-bold mb-1">Area</p>
-              <p className="font-bold text-gray-900 text-sm">500.00 sq.m.</p>
+              <p className="font-bold text-gray-900 text-sm">
+                {selectedParcel?.area ? `${selectedParcel.area.toFixed(2)} sq.m.` : 'N/A'}
+              </p>
             </div>
-            <button onClick={() => setSelectedParcelId('PLOT-45')} className="text-xs border border-gray-300 px-3 py-1.5 rounded font-bold text-gray-700 hover:bg-gray-50">
-              Change Parcel
-            </button>
           </div>
         </div>
       </div>
@@ -255,10 +264,11 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
             {/* Selected Parcel Summary Card */}
             <div className="mt-auto bg-white border border-gray-200 rounded-xl p-4 shadow-sm text-xs">
               <p className="font-bold text-gray-500 uppercase tracking-wider mb-2 text-[10px]">Selected Parcel</p>
-              <p className="font-bold text-gray-900">PLOT-45</p>
-              <p className="text-gray-500 text-[11px]">Plot 45, Sector 12</p>
-              <p className="text-gray-500 text-[11px]">Nagpur, Maharashtra</p>
-              <p className="text-gray-900 font-bold mt-2">Area: 500.00 sq.m.</p>
+              <p className="font-bold text-gray-900">{selectedParcel?.parcel_id || 'None'}</p>
+              <p className="text-gray-500 text-[11px]">{selectedParcel?.boundary_status || 'Unknown'}</p>
+              <p className="text-gray-900 font-bold mt-2">
+                Area: {selectedParcel?.area ? `${selectedParcel.area.toFixed(2)}` : 'N/A'} sq.m.
+              </p>
             </div>
           </div>
 
@@ -277,6 +287,7 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
 
   // SCREEN 5: Spatial Analysis (Build Check)
   if (step === 'spatial') {
+    const metrics = buildCheckResult?.metrics || {};
     return (
       <div className="p-8 max-w-6xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Spatial Analysis (Build Check)</h1>
@@ -289,37 +300,49 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
               <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3 mb-4">Analysis Metrics</h2>
               <div className="flex flex-col gap-3 text-xs">
                 <div className="flex justify-between py-1">
-                  <span className="text-gray-500">Parcel Area</span>
-                  <span className="font-bold text-gray-900">500.00 sq.m.</span>
+                  <span className="text-gray-500">Parcel Area (Calculated)</span>
+                  <span className="font-bold text-gray-900">{metrics.parcel_area_m2 ? metrics.parcel_area_m2.toFixed(2) : 'N/A'} sq.m.</span>
+                </div>
+                <div className="flex justify-between py-1">
+                  <span className="text-gray-500">Building Total Area</span>
+                  <span className="font-bold text-gray-900">{metrics.house_area_m2 ? metrics.house_area_m2.toFixed(2) : 'N/A'} sq.m.</span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-500">Building Area (Inside Parcel)</span>
-                  <span className="font-bold text-gray-900">437.55 sq.m.</span>
+                  <span className="font-bold text-green-600">
+                    {metrics.intersection_area_m2 ? metrics.intersection_area_m2.toFixed(2) : '0.00'} sq.m.
+                  </span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-500">Building Area (Outside Parcel)</span>
-                  <span className="font-bold text-red-600">62.45 sq.m.</span>
+                  <span className={`font-bold ${metrics.outside_area_m2 > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {metrics.outside_area_m2 ? metrics.outside_area_m2.toFixed(2) : '0.00'} sq.m.
+                  </span>
                 </div>
                 <div className="flex justify-between py-1">
                   <span className="text-gray-500">Outside Percentage</span>
-                  <span className="font-bold text-red-600">12.49%</span>
-                </div>
-                <div className="flex justify-between py-1 border-t border-gray-100 pt-2">
-                  <span className="text-gray-500">IoU Score</span>
-                  <span className="font-bold text-gray-900">0.78 (78.00%)</span>
+                  <span className={`font-bold ${metrics.outside_percentage > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {metrics.outside_percentage ? metrics.outside_percentage.toFixed(2) : '0.00'}%
+                  </span>
                 </div>
               </div>
 
-              {/* Alert Red Card */}
-              <div className="mt-6 bg-red-50 border border-red-200 rounded-xl p-4">
-                <p className="font-bold text-xs text-red-600 mb-1">Encroachment Detected</p>
-                <p className="text-[11px] text-red-700">Portion of the building lies outside the parcel boundary.</p>
+              {/* Alert Card */}
+              <div className={`mt-6 rounded-xl p-4 ${metrics.outside_area_m2 > 0 ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'}`}>
+                <p className={`font-bold text-xs mb-1 ${metrics.outside_area_m2 > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {buildCheckResult?.result === 'CLEAR' ? 'No Encroachment' : 'Encroachment Detected'}
+                </p>
+                <p className={`text-[11px] ${metrics.outside_area_m2 > 0 ? 'text-red-700' : 'text-green-700'}`}>
+                  {buildCheckResult?.result === 'CLEAR' 
+                    ? 'Building is entirely within the parcel boundary.' 
+                    : 'Portion of the building extends outside the parcel boundary.'}
+                </p>
               </div>
             </div>
 
             <div className="flex justify-between mt-6">
               <button onClick={() => setStep('draw')} className="px-4 py-2 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50">Back</button>
-              <button onClick={handleRunAudit} className="px-4 py-2 bg-green-600 rounded-lg text-xs font-bold text-white hover:bg-green-700">
+              <button onClick={handleRunAudit} className="px-4 py-2 bg-green-600 rounded-lg text-xs font-bold text-white hover:bg-green-700 disabled:opacity-50" disabled={!buildCheckResult}>
                 Continue to Audit Analysis
               </button>
             </div>
@@ -331,9 +354,9 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
               <MapWorkspace 
                 parcelGeometry={selectedParcel?.geometry} 
                 houseGeometry={houseGeometry}
+                encroachmentGeometry={buildCheckResult?.encroachment_geometry}
                 onHouseDrawn={setHouseGeometry} 
                 onHouseCleared={() => setHouseGeometry(null)} 
-                showEncroachment={true}
               />
             </div>
             {/* Color Legend */}
@@ -359,6 +382,9 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
 
   // SCREEN 6: Audit Analysis
   if (step === 'analyze') {
+    const diagnosis = auditResult?.diagnosis || {};
+    const resolution = auditResult?.resolution || {};
+    
     return (
       <div className="p-8 max-w-5xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Audit Analysis</h1>
@@ -367,46 +393,66 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
         <div className="flex gap-6">
           <div className="w-1/3 flex flex-col gap-6">
             {/* Diagnosis Card */}
-            <div className="border border-red-200 bg-red-50 rounded-xl p-6">
-              <p className="text-[10px] uppercase font-bold tracking-wider text-red-600 mb-2">Diagnosis</p>
-              <h3 className="text-base font-black uppercase text-red-600 mb-2">ENCROACHMENT DETECTED</h3>
-              <p className="text-xs text-red-800 leading-relaxed">
-                Portion of the proposed construction lies outside the legal parcel boundary.
+            <div className={`rounded-xl p-6 border ${auditResult?.result === 'CLEAR' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+              <p className={`text-[10px] uppercase font-bold tracking-wider mb-2 ${auditResult?.result === 'CLEAR' ? 'text-green-600' : 'text-red-600'}`}>
+                Diagnosis
+              </p>
+              <h3 className={`text-base font-black uppercase mb-2 ${auditResult?.result === 'CLEAR' ? 'text-green-600' : 'text-red-600'}`}>
+                {auditResult?.result || 'ANALYSIS'}
+              </h3>
+              <p className={`text-xs leading-relaxed ${auditResult?.result === 'CLEAR' ? 'text-green-800' : 'text-red-800'}`}>
+                {auditResult?.problem || 'Performing analysis...'}
               </p>
             </div>
 
             {/* Analysis Summary Card */}
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm text-xs flex flex-col gap-2">
               <p className="font-bold text-gray-900 border-b border-gray-100 pb-2 mb-1">Analysis Summary</p>
-              <div className="flex justify-between"><span className="text-gray-500">Parcel ID</span><span className="font-bold">PLOT-45</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Sector</span><span>Sector 12</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">City</span><span>Nagpur</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Total Area</span><span>500.00 sq.m.</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Audit Date</span><span>24 May 2025, 14:30</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Parcel ID</span><span className="font-bold">{selectedParcel?.parcel_id || 'N/A'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Boundary Status</span><span>{selectedParcel?.boundary_status || 'Unknown'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Total Area</span><span>{selectedParcel?.area ? selectedParcel.area.toFixed(2) : 'N/A'} sq.m.</span></div>
             </div>
 
-            {/* Encroachment Details */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm text-xs flex flex-col gap-2">
-              <p className="font-bold text-gray-900 border-b border-gray-100 pb-2 mb-1">Encroachment Details</p>
-              <div className="flex justify-between"><span className="text-gray-500">Encroached Area</span><span className="font-bold text-red-600">62.45 sq.m.</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Outside Percentage</span><span className="font-bold text-red-600">12.49%</span></div>
-            </div>
+            {/* Metrics Details */}
+            {buildCheckResult?.metrics && (
+              <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm text-xs flex flex-col gap-2">
+                <p className="font-bold text-gray-900 border-b border-gray-100 pb-2 mb-1">Metrics</p>
+                <div className="flex justify-between"><span className="text-gray-500">Building Area</span><span className="font-bold">{buildCheckResult.metrics.house_area_m2?.toFixed(2)} sq.m.</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Outside Area</span><span className={`font-bold ${buildCheckResult.metrics.outside_area_m2 > 0 ? 'text-red-600' : 'text-green-600'}`}>{buildCheckResult.metrics.outside_area_m2?.toFixed(2)} sq.m.</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">Outside %</span><span className={`font-bold ${buildCheckResult.metrics.outside_percentage > 0 ? 'text-red-600' : 'text-green-600'}`}>{buildCheckResult.metrics.outside_percentage?.toFixed(2)}%</span></div>
+              </div>
+            )}
           </div>
 
           <div className="w-2/3 flex flex-col gap-6">
             {/* Resolution (Recommended Action) Card */}
             <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Resolution (Recommended Action)</h3>
-              <p className="text-sm font-bold text-gray-900 mb-4">The proposed construction encroaches upon adjacent land.</p>
+              <p className="text-sm font-bold text-gray-900 mb-4">
+                {resolution.recommended_action || 'Analyzing...'}
+              </p>
               
-              <p className="text-xs font-bold text-gray-700 mb-2">Recommended Actions:</p>
-              <ul className="list-disc pl-5 text-xs text-gray-600 flex flex-col gap-2">
-                <li>Re-align the building within the legal parcel boundary.</li>
-                <li>Reduce the footprint to eliminate the encroachment.</li>
-                <li>Obtain necessary NOC from adjacent land owner if applicable.</li>
-                <li>Re-submit the revised plan for compliance.</li>
-              </ul>
+              {resolution.next_steps && resolution.next_steps.length > 0 && (
+                <>
+                  <p className="text-xs font-bold text-gray-700 mb-2">Recommended Actions:</p>
+                  <ul className="list-disc pl-5 text-xs text-gray-600 flex flex-col gap-2">
+                    {resolution.next_steps.map((step: string, i: number) => (
+                      <li key={i}>{step}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
+
+            {/* AI Summary */}
+            {auditResult?.summary && (
+              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">AI Summary</h3>
+                <p className="text-xs text-gray-700 leading-relaxed">
+                  {auditResult.summary}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -437,10 +483,7 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
             <h3 className="font-bold text-gray-900 mb-4 text-sm">AI Explanation (Gemini)</h3>
             <p className="text-xs text-gray-700 leading-relaxed mb-4">
-              The analysis shows that the proposed building footprint extends beyond the legal parcel boundary in the south-east direction. Approximately 62.45 sq.m. (12.49%) of the construction lies outside the permissible limit. This constitutes encroachment as per land compliance regulations.
-            </p>
-            <p className="text-xs text-gray-700 leading-relaxed">
-              It is recommended to either reduce the building footprint to fit entirely within the parcel boundary or obtain consent from the adjoining land owner and relevant authorities. Please modify the plan accordingly and re-submit for approval.
+              {auditResult?.summary || 'Loading AI explanation...'}
             </p>
           </div>
 
@@ -449,7 +492,7 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
             <h3 className="font-bold text-gray-900 mb-3 text-sm">Recommended Action</h3>
             <div className="flex items-center gap-2 text-xs font-bold text-green-700 bg-green-50 border border-green-200 p-3 rounded-lg">
               <CheckCircle className="w-4 h-4 text-green-600" />
-              Re-align the building within the parcel boundary.
+              {auditResult?.resolution?.recommended_action || 'Analyzing...'}
             </div>
           </div>
         </div>
@@ -542,6 +585,9 @@ startxref
 
   // SCREEN 8: Generate Audit Report
   if (step === 'generate_report') {
+    const reportMetrics = buildCheckResult?.metrics || {};
+    const reportId = `RPT-${auditId?.replace('AUD-', '') || '2025-018'}`;
+    
     return (
       <div className="p-8 max-w-5xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Generate Audit Report</h1>
@@ -551,15 +597,15 @@ startxref
           {/* Report Summary Left Column */}
           <div className="w-1/3 bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col gap-3 text-xs">
             <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-3 mb-1 text-sm">Report Summary</h3>
-            <div className="flex justify-between"><span className="text-gray-500">Parcel ID</span><span className="font-bold">PLOT-45</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Sector</span><span>Sector 12</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">City</span><span>Nagpur</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Parcel Area</span><span>500.00 sq.m.</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Building Area (Inside)</span><span>437.55 sq.m.</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Building Area (Outside)</span><span className="font-bold text-red-600">62.45 sq.m.</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Outside Percentage</span><span className="font-bold text-red-600">12.49%</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">IoU Score</span><span>0.78 (78.00%)</span></div>
-            <div className="flex justify-between pt-2 border-t border-gray-100"><span className="text-gray-500 font-bold">Diagnosis</span><span className="font-bold text-red-600 uppercase">ENCROACHMENT DETECTED</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Parcel ID</span><span className="font-bold">{selectedParcel?.parcel_id || 'N/A'}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Sector</span><span>{selectedParcel?.sector || 'Unknown'}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">City</span><span>{selectedParcel?.city || 'Unknown'}</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Parcel Area</span><span>{selectedParcel?.area ? selectedParcel.area.toFixed(2) : 'N/A'} sq.m.</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Building Area (Inside)</span><span>{reportMetrics.house_area_m2 ? (reportMetrics.house_area_m2 - reportMetrics.outside_area_m2).toFixed(2) : 'N/A'} sq.m.</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Building Area (Outside)</span><span className="font-bold text-red-600">{reportMetrics.outside_area_m2 ? reportMetrics.outside_area_m2.toFixed(2) : '0.00'} sq.m.</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Outside Percentage</span><span className="font-bold text-red-600">{reportMetrics.outside_percentage ? reportMetrics.outside_percentage.toFixed(2) : '0.00'}%</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">IoU Score</span><span>{reportMetrics.iou ? reportMetrics.iou.toFixed(2) : 'N/A'}</span></div>
+            <div className="flex justify-between pt-2 border-t border-gray-100"><span className="text-gray-500 font-bold">Diagnosis</span><span className={`font-bold uppercase ${auditResult?.result === 'CLEAR' ? 'text-green-600' : 'text-red-600'}`}>{auditResult?.result || 'N/A'}</span></div>
           </div>
 
           {/* Styled PDF Document Preview Right Column */}
@@ -572,20 +618,20 @@ startxref
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-xs mb-6 bg-gray-50 p-4 rounded-lg">
-              <div><span className="text-gray-400">Report ID:</span> <span className="font-bold text-gray-900">RPT-2025-018</span></div>
-              <div><span className="text-gray-400">Parcel ID:</span> <span className="font-bold text-gray-900">PLOT-45 (Sector 12)</span></div>
-              <div><span className="text-gray-400">Audit ID:</span> <span className="text-gray-700">AUD-2025-018</span></div>
-              <div><span className="text-gray-400">Location:</span> <span className="text-gray-700">Nagpur, Maharashtra</span></div>
-              <div><span className="text-gray-400">Audit Date:</span> <span className="text-gray-700">24 May 2025, 14:30</span></div>
+              <div><span className="text-gray-400">Report ID:</span> <span className="font-bold text-gray-900">{reportId}</span></div>
+              <div><span className="text-gray-400">Parcel ID:</span> <span className="font-bold text-gray-900">{selectedParcel?.parcel_id || 'N/A'}</span></div>
+              <div><span className="text-gray-400">Audit ID:</span> <span className="text-gray-700">{auditId}</span></div>
+              <div><span className="text-gray-400">Location:</span> <span className="text-gray-700">{selectedParcel?.location || 'Unknown'}</span></div>
+              <div><span className="text-gray-400">Audit Date:</span> <span className="text-gray-700">{new Date().toLocaleString()}</span></div>
             </div>
 
             <div className="text-xs space-y-2 mb-6">
               <p className="font-bold text-gray-900 uppercase text-[10px] tracking-wider mb-2">Summary Table</p>
-              <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">Parcel Area</span><span>500.00 sq.m.</span></div>
-              <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">Building Area (Inside)</span><span>437.55 sq.m.</span></div>
-              <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">Building Area (Outside)</span><span className="text-red-600 font-bold">62.45 sq.m.</span></div>
-              <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">IoU Score</span><span>0.78 (78.00%)</span></div>
-              <div className="flex justify-between py-1 pt-2 font-bold"><span className="text-gray-700">Diagnosis</span><span className="text-red-600">ENCROACHMENT DETECTED</span></div>
+              <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">Parcel Area</span><span>{selectedParcel?.area ? selectedParcel.area.toFixed(2) : 'N/A'} sq.m.</span></div>
+              <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">Building Area (Inside)</span><span>{reportMetrics.house_area_m2 ? (reportMetrics.house_area_m2 - reportMetrics.outside_area_m2).toFixed(2) : 'N/A'} sq.m.</span></div>
+              <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">Building Area (Outside)</span><span className="text-red-600 font-bold">{reportMetrics.outside_area_m2 ? reportMetrics.outside_area_m2.toFixed(2) : '0.00'} sq.m.</span></div>
+              <div className="flex justify-between py-1 border-b border-gray-100"><span className="text-gray-500">IoU Score</span><span>{reportMetrics.iou ? reportMetrics.iou.toFixed(2) : 'N/A'}</span></div>
+              <div className="flex justify-between py-1 pt-2 font-bold"><span className="text-gray-700">Diagnosis</span><span className={auditResult?.result === 'CLEAR' ? 'text-green-600' : 'text-red-600'}>{auditResult?.result || 'N/A'}</span></div>
             </div>
           </div>
         </div>
@@ -593,7 +639,7 @@ startxref
         <div className="flex justify-between">
           <button onClick={() => setStep('analyze')} className="px-6 py-2 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50">Back</button>
           <button 
-            onClick={() => handleDownloadPDF('RPT-2025-018')} 
+            onClick={() => handleDownloadPDF(reportId)} 
             className="px-6 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 flex items-center gap-2"
           >
             <Download className="w-4 h-4" /> Download Report (PDF)

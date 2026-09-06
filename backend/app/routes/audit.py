@@ -132,6 +132,7 @@ async def audit_analyze(request: AuditAnalysisRequest):
         # Step 5: Build complete response
         return AuditAnalysisResponse(
             success=True,
+            audit_id=audit_id,
             result=diagnosis.get('result', ''),
             summary=ai_result.get('summary', ''),
             problem=ai_result.get('problem', ''),

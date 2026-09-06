@@ -16,31 +16,16 @@ export const apiClient = {
   // Parcel endpoints
   listParcels: async () => {
     const res = await api.get('/parcels');
-    const parcels = Array.isArray(res.data) ? res.data : (res.data?.parcels || []);
-    // Map standard GeoJSON Feature to flat Parcel interface
-    const formatted = parcels.map((p: any) => ({
-      parcel_id: p.properties?.parcel_id,
-      area: p.properties?.area,
-      boundary_status: p.properties?.boundary_status,
-      owner: p.properties?.owner,
-      geometry: p.geometry
-    }));
-    return { data: formatted };
+    // Backend returns {success: true, parcels: [...]}
+    const parcels = res.data?.parcels || [];
+    return { data: parcels };
   },
   
   getParcel: async (parcelId: string) => {
     const res = await api.get(`/parcels/${parcelId}`);
-    const p = res.data;
-    // Map standard GeoJSON Feature to flat Parcel interface
-    return { 
-      data: {
-        parcel_id: p.properties?.parcel_id,
-        area: p.properties?.area,
-        boundary_status: p.properties?.boundary_status,
-        owner: p.properties?.owner,
-        geometry: p.geometry
-      }
-    };
+    // Backend returns {success: true, parcel: {...}}
+    const parcel = res.data?.parcel || null;
+    return { data: parcel };
   },
   
   // Upload endpoints

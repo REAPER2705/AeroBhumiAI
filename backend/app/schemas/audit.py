@@ -42,6 +42,7 @@ class ResolutionGuidance(BaseModel):
 class AuditAnalysisResponse(BaseModel):
     """Response schema for audit analysis."""
     success: bool
+    audit_id: str  # Generated audit ID for report generation
     result: str
     summary: str
     problem: str

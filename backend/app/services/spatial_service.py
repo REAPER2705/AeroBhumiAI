@@ -4,13 +4,20 @@ Responsibilities (GIS Engine):
 - Polygon geometry validation and intersection
 - Area calculations for proposed buildings
 - Deterministic spatial comparisons
+- Calculate actual intersection and outside portions
 
-This MVP uses pure Python geometry calculations.
-Production version would use GeoPandas/Shapely for advanced CRS handling.
+Uses Shapely for accurate polygon operations.
 """
 
-from typing import Dict, Tuple, Any
+from typing import Dict, Tuple, Any, List
 import math
+
+try:
+    from shapely.geometry import Polygon as ShapelyPolygon
+    from shapely.geometry import mapping
+    SHAPELY_AVAILABLE = True
+except ImportError:
+    SHAPELY_AVAILABLE = False
 
 
 def validate_polygon_geometry(geometry: Dict[str, Any]) -> Tuple[bool, str]:
@@ -112,22 +119,32 @@ def calculate_ring_area(ring: list) -> float:
     return abs(area) / 2
 
 
-def convert_area_to_square_meters(area_degrees: float, latitude: float) -> float:
-    """Convert area in square degrees to approximate square meters.
+def convert_area_to_square_meters(area_degrees_squared: float, latitude: float) -> float:
+    """Convert area in square degrees to square meters.
     
-    Uses simplified calculation valid for small areas near reference latitude.
+    Formula: 
+    - 1 degree latitude = ~111,320 meters (constant)
+    - 1 degree longitude = ~111,320 * cos(latitude) meters
+    - Area in m² = area_degrees² * (111320)² * cos(latitude)
+    
+    Args:
+        area_degrees_squared: Area in square degrees
+        latitude: Latitude for cos adjustment
+    
+    Returns:
+        Area in square meters
     """
-    if area_degrees <= 0:
+    if area_degrees_squared <= 0:
         return 0
     
-    # At equator: 1 degree ≈ 111 km
-    # Adjustment for latitude
+    # Meters per degree (linear, not squared)
+    meters_per_degree_lat = 111320  # ~1 degree latitude
     lat_rad = math.radians(latitude)
-    meters_per_degree_lat = 111000
-    meters_per_degree_lon = 111000 * math.cos(lat_rad)
+    meters_per_degree_lon = 111320 * math.cos(lat_rad)  # Adjusted for latitude
     
-    # Convert from degrees to meters
-    area_m2 = area_degrees * meters_per_degree_lat * meters_per_degree_lon
+    # Convert square degrees to square meters
+    # 1 square degree = meters_per_degree_lat * meters_per_degree_lon square meters
+    area_m2 = area_degrees_squared * meters_per_degree_lat * meters_per_degree_lon
     return area_m2
 
 
@@ -160,45 +177,75 @@ def polygons_intersect(parcel_ring: list, house_ring: list) -> bool:
 
 
 def calculate_metrics(parcel_geometry: dict, house_geometry: dict) -> dict:
-    """Calculate all spatial metrics for build check.
+    """Calculate all spatial metrics for build check using Shapely.
     
     Returns dict with:
         - house_area_m2: Total area of proposed house
-        - outside_area_m2: Area of house outside parcel
+        - outside_area_m2: Area of house outside parcel (ACTUAL, not estimated)
         - outside_percentage: Percentage outside
-        - has_conflict: Boolean indicating if there's any overlap outside parcel
+        - encroachment_geometry: GeoJSON Polygon of outside portion (or null)
     """
     try:
+        if not SHAPELY_AVAILABLE:
+            raise ImportError("Shapely is required for accurate spatial calculations")
+        
         parcel_ring = parcel_geometry['coordinates'][0]
         house_ring = house_geometry['coordinates'][0]
         
-        # Calculate house area in square degrees
-        house_area_degrees = calculate_ring_area(house_ring)
-        avg_latitude = estimate_average_latitude(house_ring)
+        # Convert GeoJSON rings to Shapely polygons
+        # GeoJSON uses [lon, lat], Shapely uses (lon, lat) internally
+        parcel_coords = [(coord[0], coord[1]) for coord in parcel_ring]
+        house_coords = [(coord[0], coord[1]) for coord in house_ring]
+        
+        parcel_poly = ShapelyPolygon(parcel_coords)
+        house_poly = ShapelyPolygon(house_coords)
+        
+        # Validate polygons are valid
+        if not parcel_poly.is_valid:
+            raise ValueError("Parcel polygon is not valid")
+        if not house_poly.is_valid:
+            raise ValueError("House polygon is not valid")
+        
+        # Use the PARCEL's average latitude for coordinate conversion
+        # This ensures consistency across both geometries
+        avg_latitude = estimate_average_latitude(parcel_ring)
+        
+        # Calculate house area in degrees, then convert to m²
+        house_area_degrees = house_poly.area
         house_area_m2 = convert_area_to_square_meters(house_area_degrees, avg_latitude)
         
-        # Check if any part of house is outside parcel
-        has_conflict = False
-        outside_area_degrees = 0
+        # Calculate parcel area in degrees, then convert to m²
+        parcel_area_degrees = parcel_poly.area
+        parcel_area_m2 = convert_area_to_square_meters(parcel_area_degrees, avg_latitude)
         
-        # For simplicity in MVP: check if all vertices of house are inside parcel
-        all_inside = all(point_in_polygon(vertex, parcel_ring) for vertex in house_ring)
+        # Calculate ACTUAL outside area using set difference
+        # outside_portion = house - parcel (what's in house but NOT in parcel)
+        outside_portion = house_poly.difference(parcel_poly)
         
-        if not all_inside:
-            has_conflict = True
-            # Estimate: if not all inside, approximately 25% might be outside (conservative estimate)
-            # In production with real clipping, this would be exact
-            outside_area_degrees = house_area_degrees * 0.25
+        # Handle empty geometry (building completely inside)
+        if outside_portion.is_empty:
+            outside_area_degrees = 0
+            outside_geometry = None
+        else:
+            outside_area_degrees = outside_portion.area
+            # Convert outside portion back to GeoJSON
+            outside_geom = mapping(outside_portion)
+            outside_geometry = outside_geom
         
         outside_area_m2 = convert_area_to_square_meters(outside_area_degrees, avg_latitude)
         outside_percentage = (outside_area_m2 / house_area_m2 * 100) if house_area_m2 > 0 else 0
         
+        # Determine if there's actual conflict
+        has_conflict = outside_area_m2 > 0
+        
         return {
             'house_area_m2': round(house_area_m2, 2),
+            'parcel_area_m2': round(parcel_area_m2, 2),
             'outside_area_m2': round(outside_area_m2, 2),
             'outside_percentage': round(outside_percentage, 2),
             'has_conflict': has_conflict,
-            'intersection_area_m2': round(house_area_m2 - outside_area_m2, 2) if house_area_m2 > 0 else 0
+            'intersection_area_m2': round(house_area_m2 - outside_area_m2, 2) if house_area_m2 > 0 else 0,
+            'encroachment_geometry': outside_geometry  # The ACTUAL outside portion
         }
     except Exception as e:
         raise ValueError(f"Error calculating metrics: {str(e)}")
