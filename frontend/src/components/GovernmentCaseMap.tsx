@@ -99,26 +99,52 @@ export default function GovernmentCaseMap({
           />
         )}
 
-        {/* Render all cadastral parcels as background reference */}
+        {/* Render all cadastral parcels with labels */}
         {cadastralParcels.map((parcel, idx) => (
-          <Polygon 
-            key={`parcel-${idx}`}
-            positions={parcel.coordinates}
-            pathOptions={{
-              color: '#999999',
-              weight: 1,
-              fillColor: '#f5f5f5',
-              fillOpacity: 0.3,
-              dashArray: null
-            }}
-          >
-            <Popup>
-              <div className="text-xs">
-                <p className="font-bold">{parcel.parcel_id}</p>
-                <p className="text-gray-600">{Math.round(parcel.area_m2)} m²</p>
-              </div>
-            </Popup>
-          </Polygon>
+          <React.Fragment key={`parcel-group-${idx}`}>
+            {/* Parcel boundary polygon */}
+            <Polygon 
+              key={`parcel-${idx}`}
+              positions={parcel.coordinates}
+              pathOptions={{
+                color: '#999999',
+                weight: 1,
+                fillColor: '#f5f5f5',
+                fillOpacity: 0.3,
+                dashArray: null
+              }}
+            >
+              <Popup>
+                <div className="text-xs">
+                  <p className="font-bold">{parcel.parcel_id}</p>
+                  <p className="text-gray-600">{Math.round(parcel.area_m2)} m²</p>
+                </div>
+              </Popup>
+            </Polygon>
+            
+            {/* Parcel number label */}
+            {parcel.center && (
+              <Marker
+                key={`label-${idx}`}
+                position={parcel.center}
+                icon={L.divIcon({
+                  html: `<div style="
+                    background: transparent;
+                    border: none;
+                    text-align: center;
+                    font-size: 10px;
+                    font-weight: bold;
+                    color: #555555;
+                    text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+                    pointer-events: none;
+                  ">${parcel.parcel_id.replace('P-', '')}</div>`,
+                  className: 'parcel-label',
+                  iconSize: [30, 16],
+                  iconAnchor: [15, 8]
+                })}
+              />
+            )}
+          </React.Fragment>
         ))}
 
         {/* Government Record Boundary - Green (always show) */}
@@ -169,25 +195,51 @@ export default function GovernmentCaseMap({
 
         {/* Conflict Area - Red highlight (conflict views) */}
         {conflictCoords.length > 0 && (mapView === 'conflict' || mapView === 'comparison') && (
-          <Polygon 
-            positions={conflictCoords}
-            pathOptions={{
-              color: '#dc2626',
-              weight: 2,
-              fillColor: '#ef4444',
-              fillOpacity: 0.6,
-              dashArray: null,
-              className: 'conflict-area'
-            }}
-          >
-            <Popup>
-              <div className="text-xs">
-                <p className="font-bold text-red-700">⚠ Conflict Area</p>
-                <p className="text-gray-700">{selectedCase?.affected_area_m2} m²</p>
-                <p className="text-gray-600">{selectedCase?.affected_side} side</p>
-              </div>
-            </Popup>
-          </Polygon>
+          <>
+            <Polygon 
+              positions={conflictCoords}
+              pathOptions={{
+                color: '#dc2626',
+                weight: 2.5,
+                fillColor: '#ef4444',
+                fillOpacity: 0.7,
+                dashArray: null,
+                className: 'conflict-area'
+              }}
+            >
+              <Popup>
+                <div className="text-xs">
+                  <p className="font-bold text-red-700">⚠ Conflict Area</p>
+                  <p className="text-gray-700">{selectedCase?.affected_area_m2} m²</p>
+                  <p className="text-gray-600">{selectedCase?.affected_side} boundary</p>
+                </div>
+              </Popup>
+            </Polygon>
+            
+            {/* Conflict label marker */}
+            <Marker
+              position={[
+                (conflictCoords[0][0] + conflictCoords[2][0]) / 2,
+                (conflictCoords[0][1] + conflictCoords[2][1]) / 2
+              ]}
+              icon={L.divIcon({
+                html: `<div style="
+                  background: white;
+                  border: 2px solid #dc2626;
+                  border-radius: 4px;
+                  padding: 2px 6px;
+                  text-align: center;
+                  font-size: 10px;
+                  font-weight: bold;
+                  color: #dc2626;
+                  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                ">CONFLICT<br/>${selectedCase?.affected_area_m2} m²</div>`,
+                className: 'conflict-label',
+                iconSize: [60, 40],
+                iconAnchor: [30, 20]
+              })}
+            />
+          </>
         )}
 
         {/* Center marker */}

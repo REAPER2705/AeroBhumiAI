@@ -61,12 +61,13 @@ const createCadastralMap = (): string => {
     <text x="30" y="635" font-size="9" font-weight="bold" fill="#333333">LEGEND:</text>
     <line x1="30" y1="640" x2="50" y2="640" stroke="#1a5f1a" stroke-width="3"/>
     <text x="60" y="645" font-size="8" fill="#333333">= Registered Boundary</text>
-    <text x="30" y="665" font-size="8" fill="#666666">Official Government Record ® Maharashtra Revenue Department 2024</text>
+    <text x="30" y="665" font-size="8" fill="#666666">Official Government Record (c) Maharashtra Revenue Department 2024</text>
     <text x="30" y="680" font-size="7" fill="#999999">Not to be reproduced without written permission • Coordinates in WGS84</text>
     <text x="300" y="400" font-size="60" fill="#f0f0f0" opacity="0.15" text-anchor="middle" font-weight="bold" font-style="italic">VERIFIED</text>
   </svg>`;
   
-  const encoded = btoa(svg);
+  // UTF-8 safe Base64 encoding to handle Unicode characters like © and •
+  const encoded = btoa(unescape(encodeURIComponent(svg)));
   return `data:image/svg+xml;base64,${encoded}`;
 };
 
@@ -81,32 +82,65 @@ export const DEMO_MAP_IMAGE = createCadastralMap();
 const generateParcelGrid = () => {
   const parcels: any[] = [];
   const baseLatLon: [number, number] = [21.1458, 79.0882];
-  const cellWidth = 0.0008;  // ~89 meters at equator
-  const cellHeight = 0.0006; // ~67 meters at equator
+  
+  // Larger cells for better visibility at this zoom level (~18)
+  // ~70 meters = 0.00063 degrees latitude, ~89 meters = 0.00089 degrees longitude at equator
+  const cellWidth = 0.00095;   // Slightly wider cells
+  const cellHeight = 0.00070;  // Slightly taller cells
   
   let parcelIndex = 1;
   
-  for (let row = 0; row < 4; row++) {
+  // Create a more realistic cadastral grid with 5 rows × 6 columns = 30 parcels
+  for (let row = 0; row < 5; row++) {
     for (let col = 0; col < 6; col++) {
+      // Base position for this cell
       const baseLat = baseLatLon[0] - (row * cellHeight);
       const baseLon = baseLatLon[1] + (col * cellWidth);
       
       const parcelId = `P-${String(parcelIndex).padStart(3, '0')}`;
       
-      // Create rectangular parcel with slight rotation variations for realism
-      const rotation = (row + col) * 0.001; // Subtle rotation
-      const parcelCoords: [number, number][] = [
-        [baseLat + rotation, baseLon],
-        [baseLat + rotation, baseLon + cellWidth],
-        [baseLat - cellHeight + rotation, baseLon + cellWidth],
-        [baseLat - cellHeight + rotation, baseLon],
-        [baseLat + rotation, baseLon]
+      // Add variation to parcel size for realism
+      // Some parcels are wider, some are taller, creating irregular pattern
+      const widthVariation = 0.95 + Math.random() * 0.1;  // 95-105% of standard width
+      const heightVariation = 0.93 + Math.random() * 0.14; // 93-107% of standard height
+      
+      // Add subtle rotation for visual interest (1-3 degrees)
+      const rotationDegrees = Math.random() * 3;
+      const rotationRad = (rotationDegrees * Math.PI) / 180;
+      
+      // Create irregular polygons by adding corner variations
+      const cornerNoise = 0.0001;
+      const corners: [number, number][] = [
+        // SW corner with noise
+        [baseLat - cornerNoise * Math.random(), baseLon - cornerNoise * Math.random()],
+        // SE corner with noise
+        [baseLat - cornerNoise * Math.random(), baseLon + (cellWidth * widthVariation) + cornerNoise * Math.random()],
+        // NE corner with noise
+        [baseLat - (cellHeight * heightVariation) + cornerNoise * Math.random(), baseLon + (cellWidth * widthVariation) + cornerNoise * Math.random()],
+        // NW corner with noise
+        [baseLat - (cellHeight * heightVariation) - cornerNoise * Math.random(), baseLon - cornerNoise * Math.random()],
       ];
+      
+      // Apply simple rotation around center
+      const centerLat = baseLat - (cellHeight * heightVariation) / 2;
+      const centerLon = baseLon + (cellWidth * widthVariation) / 2;
+      
+      const rotatedCorners = corners.map(([lat, lon]) => {
+        const dLat = lat - centerLat;
+        const dLon = lon - centerLon;
+        const newDLat = dLat * Math.cos(rotationRad) - dLon * Math.sin(rotationRad);
+        const newDLon = dLat * Math.sin(rotationRad) + dLon * Math.cos(rotationRad);
+        return [centerLat + newDLat, centerLon + newDLon] as [number, number];
+      });
+      
+      // Close the polygon
+      rotatedCorners.push(rotatedCorners[0]);
       
       parcels.push({
         parcel_id: parcelId,
-        coordinates: parcelCoords,
-        area_m2: 5000 + Math.random() * 3000
+        coordinates: rotatedCorners,
+        area_m2: 1200 + Math.random() * 2500,  // Vary areas 1200-3700 m²
+        center: [centerLat, centerLon] as [number, number]  // Store center for label placement
       });
       
       parcelIndex++;
@@ -119,46 +153,41 @@ const generateParcelGrid = () => {
 const CADASTRAL_PARCELS = generateParcelGrid();
 
 // ============================================================================
-// DEMO GEOMETRY - P-003 with conflict in WEST side
+// DEMO GEOMETRY - P-009 with conflict on WEST side
 // ============================================================================
 
 export const DEMO_GEOMETRY = {
   center: [21.1458, 79.0882] as [number, number],
 
-  // P-003 Government record (official boundary)
+  // P-009 Government record (official boundary)
+  // P-009 is at row 1, col 3 in the grid
+  // baseLatLon[0] - (1 * 0.00070) = 21.1458 - 0.0007 = 21.1451
+  // baseLatLon[1] + (3 * 0.00095) = 79.0882 + 0.00285 = 79.09105
   governmentParcel: [
-    [21.1458, 79.0882],
-    [21.1458, 79.0890],
-    [21.1452, 79.0890],
-    [21.1452, 79.0882],
-    [21.1458, 79.0882],
+    [21.1451, 79.0905],
+    [21.1451, 79.0915],
+    [21.1444, 79.0915],
+    [21.1444, 79.0905],
+    [21.1451, 79.0905],
   ] as [number, number][],
 
-  // P-003 Observed boundary - WEST side extends beyond official
+  // P-009 Observed boundary - WEST side extends beyond official
   observedBoundary: [
-    [21.1458, 79.0882],
-    [21.1458, 79.0890],
-    [21.1452, 79.0890],
-    [21.1452, 79.0875],  // Extends west
-    [21.1458, 79.0882],
+    [21.1451, 79.0905],
+    [21.1451, 79.0915],
+    [21.1444, 79.0915],
+    [21.1444, 79.0890],  // Extends west
+    [21.1451, 79.0905],
   ] as [number, number][],
 
-  // Building structure
-  building: [
-    [21.14555, 79.0884],
-    [21.14555, 79.0888],
-    [21.14535, 79.0888],
-    [21.14535, 79.0884],
-    [21.14555, 79.0884],
-  ] as [number, number][],
-
-  // Conflict area - WEST boundary overlap (22.1 m²)
+  // Conflict area - Small strip/overlap on WEST boundary (22.1 m²)
+  // This appears as a thin strip at the edge, not a giant rectangle
   conflict: [
-    [21.1452, 79.0875],
-    [21.1452, 79.0882],
-    [21.1456, 79.0882],
-    [21.1456, 79.0875],
-    [21.1452, 79.0875],
+    [21.1444, 79.0894],     // Start of overlap strip
+    [21.1444, 79.0905],     // End of strip (small width)
+    [21.14455, 79.0905],    // Slight extension into parcel
+    [21.14455, 79.0894],    // Back to start point
+    [21.1444, 79.0894],     // Close polygon
   ] as [number, number][],
 
   // All cadastral parcels from grid
@@ -166,12 +195,12 @@ export const DEMO_GEOMETRY = {
 };
 
 // ============================================================================
-// GOVERNMENT CASES - Only P-003 for demo (with conflict)
+// GOVERNMENT CASES - Only P-009 for demo (with conflict)
 // ============================================================================
 
 export const governmentCases: GovernmentCase[] = [
   {
-    parcel_id: 'P-003',
+    parcel_id: 'P-009',
     registered_area_m2: 1250,
     observed_area_m2: 1272.1,
     area_variance_percent: 1.77,
@@ -193,7 +222,7 @@ export function getCaseGeometry(parcelId: string): {
   observed: any;
   conflict: any;
 } {
-  if (parcelId === 'P-003') {
+  if (parcelId === 'P-009') {
     return {
       official: { type: 'Polygon', coordinates: [DEMO_GEOMETRY.governmentParcel.map(([lat, lon]) => [lon, lat])] },
       observed: { type: 'Polygon', coordinates: [DEMO_GEOMETRY.observedBoundary.map(([lat, lon]) => [lon, lat])] },
