@@ -48,6 +48,8 @@ export const apiClient = {
   // Report endpoints
   generateReport: (auditId: string) =>
     api.post('/reports/generate', { audit_id: auditId }),
+  
+  // Government endpoints
+  generateGovernmentCaseSummary: (caseData: any) =>
+    api.post('/government/case-summary', caseData),
 }
-
-export default api

@@ -164,7 +164,7 @@ class TestDiagnosis:
             'outside_percentage': 0.1
         }
         result = diagnosis_service.diagnose_result(metrics, tolerance_m2=0.5)
-        assert result == 'CLEAR'
+        assert result['result'] == 'CLEAR'
     
     def test_diagnose_encroachment_result(self):
         """Test POTENTIAL_BUILDING_ENCROACHMENT when conflict exists."""
@@ -174,7 +174,7 @@ class TestDiagnosis:
             'outside_percentage': 25.0
         }
         result = diagnosis_service.diagnose_result(metrics, tolerance_m2=0.5)
-        assert result == 'POTENTIAL_BUILDING_ENCROACHMENT'
+        assert result['result'] == 'POTENTIAL_BUILDING_ENCROACHMENT'
     
     def test_diagnose_uses_tolerance(self):
         """Test that tolerance is respected."""
@@ -186,8 +186,8 @@ class TestDiagnosis:
         
         # With low tolerance, should be encroachment
         result_strict = diagnosis_service.diagnose_result(metrics, tolerance_m2=1.0)
-        assert result_strict == 'POTENTIAL_BUILDING_ENCROACHMENT'
+        assert result_strict['result'] == 'POTENTIAL_BUILDING_ENCROACHMENT'
         
         # With high tolerance, should be clear
         result_lenient = diagnosis_service.diagnose_result(metrics, tolerance_m2=10.0)
-        assert result_lenient == 'CLEAR'
+        assert result_lenient['result'] == 'CLEAR'
