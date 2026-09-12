@@ -1,233 +1,227 @@
-"""AI explanation service — deterministic template-based approach.
+"""AI service for natural language explanations using Gemini API.
 
 Responsibilities:
-- Convert structured GIS/diagnosis facts into plain-language output
-- Never perform geometry calculations (that is spatial_service's job)
-- Never invent, estimate, or re-derive measurements
-- Produce output matching the spec's AI contract:
-  { summary, problem, recommended_action, verification_note }
+- Generate plain-language explanations of GIS results via Gemini
+- Create actionable recommendations
+- Provide verification guidance
+- Fall back to template-based explanations if Gemini unavailable
 
-Architecture note:
-  Two steps are kept deliberately separate so the text-generation step can be
-  swapped for a real LLM call later without changing explain_result()'s signature:
-
-  1. _extract_facts(diagnosis)      → plain Python dict of typed facts
-  2. _render_explanation(facts)     → final text output dict
-
-  A future LLM integration would replace _render_explanation() only.
-
-Hard rules (from project spec):
-  - Every number in the output text comes directly from the input dict.
-  - Thresholds (>50% = majority, >20% = significant, else minor) reuse the
-    same boundaries already established in diagnosis_service.py.
-  - No legal ownership, boundary validity, or construction approval claims.
-    Disclaimer language mirrors resolution_service.py's legal_note field.
-  - Missing required key → AIServiceError, never placeholder text.
+Critical Rule:
+- AI NEVER performs geometry calculations (GIS does that)
+- AI NEVER inverts measurements
+- AI receives structured facts only
+- AI generates: explanation + recommendation + verification note
 """
 
-from typing import Any, Dict
-
-# Required keys that must be present in the diagnosis dict passed to explain_result.
-_REQUIRED_KEYS = (
-    "result",
-    "reason",
-    "affected_area_m2",
-    "outside_percentage",
-    "house_area_m2",
-    "has_conflict",
-    "priority",
-)
-
-# Legal disclaimer — mirrors resolution_service.py's legal_note field exactly.
-_LEGAL_DISCLAIMER = (
-    "This assessment is based on supplied reference data. "
-    "Legal boundaries and construction approval remain the responsibility "
-    "of competent authorities."
-)
+import os
+import requests
+from typing import Dict, Any, Tuple
 
 
-class AIServiceError(Exception):
-    """Raised when explain_result() receives an invalid or incomplete input."""
-    pass
+def _get_gemini_api_key() -> str:
+    """Get Gemini API key from environment."""
+    return os.getenv("GEMINI_API_KEY", "")
 
 
-# ---------------------------------------------------------------------------
-# Step 1 — fact extraction (pure data, no text composition)
-# ---------------------------------------------------------------------------
-
-def _extract_facts(diagnosis: Dict[str, Any]) -> Dict[str, Any]:
-    """Validate the diagnosis dict and extract typed facts for text generation.
-
-    Raises:
-        AIServiceError: if any required key is missing or result is unrecognised.
-    """
-    if not isinstance(diagnosis, dict):
-        raise AIServiceError("Diagnosis input must be a dictionary.")
-
-    for key in _REQUIRED_KEYS:
-        if key not in diagnosis:
-            raise AIServiceError(
-                f"Missing required key in diagnosis input: '{key}'"
-            )
-
-    result = diagnosis["result"]
-    valid_results = {"CLEAR", "BOUNDARY_VARIANCE", "POTENTIAL_BUILDING_ENCROACHMENT"}
-    if result not in valid_results:
-        raise AIServiceError(
-            f"Unrecognised result value: '{result}'. "
-            f"Expected one of: {sorted(valid_results)}"
-        )
-
-    return {
-        "result":             result,
-        "reason":             str(diagnosis["reason"]),
-        "affected_area_m2":   float(diagnosis["affected_area_m2"]),
-        "outside_percentage": float(diagnosis["outside_percentage"]),
-        "house_area_m2":      float(diagnosis["house_area_m2"]),
-        "has_conflict":       bool(diagnosis["has_conflict"]),
-        "priority":           str(diagnosis["priority"]),
-    }
+def _get_gemini_model() -> str:
+    """Get Gemini model name from environment."""
+    return os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
 
 
-# ---------------------------------------------------------------------------
-# Step 2 — text rendering (could be replaced by an LLM call)
-# ---------------------------------------------------------------------------
-
-def _render_explanation(facts: Dict[str, Any]) -> Dict[str, str]:
-    """Convert structured facts into plain-language explanation output.
-
-    All numbers used in text are taken verbatim from *facts*; no arithmetic
-    or estimation is performed here.
-
-    Returns:
-        dict with keys: summary, problem, recommended_action, verification_note
-    """
-    result             = facts["result"]
-    affected_area_m2   = facts["affected_area_m2"]
-    outside_percentage = facts["outside_percentage"]
-    house_area_m2      = facts["house_area_m2"]
-
-    # ------------------------------------------------------------------
-    # CLEAR
-    # ------------------------------------------------------------------
-    if result == "CLEAR":
-        summary = (
-            "No significant spatial discrepancy was detected between the "
-            "proposed building footprint and the reference parcel boundary."
-        )
-        problem = (
-            "No significant spatial discrepancy was detected. "
-            "The proposed footprint of {house_area_m2:.2f} m\u00b2 "
-            "lies within the reference parcel boundary."
-        ).format(house_area_m2=house_area_m2)
-        recommended_action = (
-            "Proceed with applicable next validation or approval step. "
-            "Consider on-site verification if the accuracy of the reference "
-            "boundary data is uncertain."
-        )
-        verification_note = _LEGAL_DISCLAIMER
-
-    # ------------------------------------------------------------------
-    # POTENTIAL_BUILDING_ENCROACHMENT
-    # ------------------------------------------------------------------
-    elif result == "POTENTIAL_BUILDING_ENCROACHMENT":
-        # Severity language mirrors diagnosis_service.py thresholds
-        if outside_percentage > 50:
-            severity = "the majority ({pct:.2f}%)".format(pct=outside_percentage)
-            action_verb = "Modify the proposed footprint"
-        elif outside_percentage > 20:
-            severity = "a significant portion ({pct:.2f}%)".format(pct=outside_percentage)
-            action_verb = "Modify the proposed footprint or request official boundary verification"
-        else:
-            severity = "a minor portion ({pct:.2f}%)".format(pct=outside_percentage)
-            action_verb = "Modify the proposed footprint or request official boundary verification"
-
-        summary = (
-            "A potential building encroachment was detected. "
-            "{severity} of the proposed {house_area_m2:.2f} m\u00b2 "
-            "footprint extends outside the reference parcel boundary."
-        ).format(
-            severity=severity.capitalize(),
-            house_area_m2=house_area_m2,
-        )
-        problem = (
-            "{affected_area_m2:.2f} m\u00b2 ({pct:.2f}%) of the proposed "
-            "building footprint lies outside the reference parcel boundary."
-        ).format(
-            affected_area_m2=affected_area_m2,
-            pct=outside_percentage,
-        )
-        recommended_action = (
-            "{action_verb}. Affected area: {affected_area_m2:.2f} m\u00b2. "
-            "Review the affected boundary location and, if required, contact "
-            "the competent authority for official boundary clarification."
-        ).format(
-            action_verb=action_verb,
-            affected_area_m2=affected_area_m2,
-        )
-        verification_note = (
-            "Official boundary verification is recommended before proceeding "
-            "with construction. " + _LEGAL_DISCLAIMER
-        )
-
-    # ------------------------------------------------------------------
-    # BOUNDARY_VARIANCE
-    # ------------------------------------------------------------------
-    else:  # BOUNDARY_VARIANCE
-        summary = (
-            "A potential boundary variance was detected. "
-            "The spatial relationship between the proposed footprint and the "
-            "reference parcel boundary requires verification."
-        )
-        problem = (
-            "The reference parcel boundary and the observed spatial evidence "
-            "do not clearly align. Verification is required before conclusions "
-            "can be drawn about the proposed {house_area_m2:.2f} m\u00b2 footprint."
-        ).format(house_area_m2=house_area_m2)
-        recommended_action = (
-            "Request field measurement or official boundary demarcation. "
-            "Compare the reference parcel geometry with current visible "
-            "boundary conditions and contact the competent authority for "
-            "official boundary clarification."
-        )
-        verification_note = (
-            "Official boundary verification is required before any construction "
-            "decision is made. " + _LEGAL_DISCLAIMER
-        )
-
-    return {
-        "summary":             summary,
-        "problem":             problem,
-        "recommended_action":  recommended_action,
-        "verification_note":   verification_note,
-    }
-
-
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
-
-def explain_result(diagnosis: Dict[str, Any]) -> Dict[str, str]:
-    """Generate a plain-language explanation for a spatial analysis diagnosis.
-
-    Deterministic template-based implementation.  Designed so _render_explanation
-    can be swapped for an LLM call in the future without changing this signature.
-
+def _build_gemini_prompt(diagnosis: Dict[str, Any], resolution: Dict[str, Any]) -> str:
+    """Build a prompt for Gemini based on diagnosis and resolution data.
+    
     Args:
-        diagnosis: The full dict returned by diagnosis_service.diagnose_result(),
-                   containing at minimum: result, reason, affected_area_m2,
-                   outside_percentage, house_area_m2, has_conflict, priority.
-
+        diagnosis: Diagnosis result dict with measurements and classification
+        resolution: Resolution guidance dict with recommended actions
+    
     Returns:
-        dict with keys:
-            summary             (str) — one-sentence status headline
-            problem             (str) — concrete description of what was found,
-                                        using numbers directly from the input
-            recommended_action  (str) — what to do next
-            verification_note   (str) — legal disclaimer (always present)
-
-    Raises:
-        AIServiceError: if a required key is missing or result is unrecognised.
+        Formatted prompt for Gemini
     """
-    facts = _extract_facts(diagnosis)
-    return _render_explanation(facts)
+    result = diagnosis.get('result', 'UNKNOWN')
+    reason = diagnosis.get('reason', '')
+    affected_area = diagnosis.get('affected_area_m2', 0)
+    outside_percentage = diagnosis.get('outside_percentage', 0)
+    house_area = diagnosis.get('house_area_m2', 0)
+    
+    action = resolution.get('recommended_action', '')
+    next_steps = resolution.get('next_steps', [])
+    
+    next_steps_text = '\n'.join([f"- {step}" for step in next_steps])
+    
+    prompt = f"""You are a land compliance expert. Based on the following spatial analysis results, provide a clear, citizen-friendly explanation of the audit findings and recommendations.
+
+SPATIAL ANALYSIS RESULTS:
+- Result Classification: {result}
+- Reason: {reason}
+- Total Building Area: {house_area:.2f} m²
+- Area Outside Parcel: {affected_area:.2f} m²
+- Percentage Outside: {outside_percentage:.2f}%
+
+DIAGNOSIS:
+The analysis shows that {reason.lower()}
+
+RECOMMENDED ACTION:
+{action}
+
+NEXT STEPS:
+{next_steps_text}
+
+Please provide a concise, citizen-friendly explanation (2-3 sentences) of the audit finding and the primary recommended action. Use simple language that a property owner can understand. Do not include technical jargon."""
+
+    return prompt
+
+
+def _call_gemini_api(prompt: str) -> Tuple[bool, str]:
+    """Call Gemini API with the given prompt.
+    
+    Args:
+        prompt: The prompt to send to Gemini
+    
+    Returns:
+        Tuple of (success: bool, response_text: str)
+    """
+    api_key = _get_gemini_api_key()
+    model = _get_gemini_model()
+    
+    if not api_key or api_key == "":
+        return False, "API key not configured"
+    
+    # Check if using placeholder key (for fallback testing)
+    if api_key.startswith("sk-") or api_key == "":
+        return False, "Placeholder API key detected"
+    
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "text": prompt
+                        }
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.7,
+                "maxOutputTokens": 1024
+            }
+        }
+        
+        response = requests.post(
+            url,
+            headers=headers,
+            params={"key": api_key},
+            json=payload,
+            timeout=15
+        )
+        
+        if response.status_code != 200:
+            return False, f"API error: {response.status_code}"
+        
+        data = response.json()
+        
+        # Extract text from response
+        if "candidates" in data and len(data["candidates"]) > 0:
+            candidate = data["candidates"][0]
+            if "content" in candidate and "parts" in candidate["content"]:
+                if len(candidate["content"]["parts"]) > 0:
+                    text = candidate["content"]["parts"][0].get("text", "")
+                    if text:
+                        return True, text
+        
+        return False, "No text in Gemini response"
+    
+    except requests.Timeout:
+        return False, "Gemini API timeout"
+    except requests.RequestException as e:
+        return False, f"Request error: {str(e)}"
+    except Exception as e:
+        return False, f"Unexpected error: {str(e)}"
+
+
+def _generate_fallback_explanation(diagnosis: Dict[str, Any], resolution: Dict[str, Any]) -> str:
+    """Generate a template-based explanation when Gemini is unavailable.
+    
+    Args:
+        diagnosis: Diagnosis result dict
+        resolution: Resolution guidance dict
+    
+    Returns:
+        Template-based explanation string
+    """
+    result = diagnosis.get('result', 'UNKNOWN')
+    reason = diagnosis.get('reason', '')
+    affected_area = diagnosis.get('affected_area_m2', 0)
+    outside_percentage = diagnosis.get('outside_percentage', 0)
+    action = resolution.get('recommended_action', '')
+    
+    if result == 'CLEAR':
+        explanation = f"The proposed building footprint remains within the reference parcel boundary. {reason} This is a favorable outcome for construction approval."
+    
+    elif result == 'POTENTIAL_BUILDING_ENCROACHMENT':
+        if outside_percentage > 50:
+            explanation = f"The analysis shows that {outside_percentage:.2f}% ({affected_area:.2f} m²) of the proposed building extends outside the reference parcel boundary. This constitutes a potential encroachment. {action} to proceed."
+        else:
+            explanation = f"A portion ({outside_percentage:.2f}% or {affected_area:.2f} m²) of the proposed building extends beyond the parcel boundary. This requires attention: {action} to resolve the conflict."
+    
+    elif result == 'BOUNDARY_VARIANCE':
+        explanation = f"The analysis indicates a variance between the reference boundary and the proposed building footprint. {reason} Field verification or official boundary clarification may be needed."
+    
+    else:
+        explanation = reason
+    
+    return explanation
+
+
+def explain_result(diagnosis: Dict[str, Any], resolution: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate AI-powered explanation for audit result.
+
+    Input:
+        - diagnosis: Dict with result, reason, affected_area_m2, outside_percentage, evidence, house_area_m2
+        - resolution: Dict with recommended_action, next_steps, verification_required, affected_boundary
+    
+    Output:
+        Dict with:
+        - summary: Plain-language explanation of the diagnosis
+        - problem: Clear statement of the problem (if any)
+        - recommended_action: Primary recommended action
+        - verification_note: Whether official verification is needed
+        - ai_explanation: Detailed explanation from Gemini (or fallback)
+        - llm_used: Boolean indicating if Gemini was used successfully
+    
+    Returns:
+        Complete explanation dict
+    """
+    result = diagnosis.get('result', 'UNKNOWN')
+    reason = diagnosis.get('reason', '')
+    
+    # Build Gemini prompt
+    prompt = _build_gemini_prompt(diagnosis, resolution)
+    
+    # Try to get Gemini explanation
+    gemini_success, gemini_text = _call_gemini_api(prompt)
+    
+    if gemini_success:
+        ai_explanation = gemini_text
+        llm_used = True
+    else:
+        # Fall back to template-based explanation
+        ai_explanation = _generate_fallback_explanation(diagnosis, resolution)
+        llm_used = False
+    
+    # Build response with all components preserved from services
+    return {
+        'summary': ai_explanation,
+        'problem': reason,
+        'recommended_action': resolution.get('recommended_action', ''),
+        'verification_note': 'Official verification required' if resolution.get('verification_required') else 'No official verification required',
+        'ai_explanation': ai_explanation,
+        'llm_used': llm_used
+    }
