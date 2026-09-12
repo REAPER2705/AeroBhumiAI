@@ -4,10 +4,12 @@
     {
       "type": "Feature",
       "properties": {
-        "parcel_id": "P-001",
-        "area": 1200,
+        "parcel_id": "PLOT-45",
+        "plot_sector": "Plot 45, Sector 12",
+        "location": "Nagpur, Maharashtra",
+        "area": 500.00,
         "boundary_status": "OFFICIAL",
-        "owner": "State Government"
+        "owner": "Rajesh Sharma"
       },
       "geometry": {
         "type": "Polygon",
@@ -25,10 +27,12 @@
     {
       "type": "Feature",
       "properties": {
-        "parcel_id": "P-002",
-        "area": 950,
+        "parcel_id": "PLOT-12",
+        "plot_sector": "Plot 12, Sector 7",
+        "location": "Nagpur, Maharashtra",
+        "area": 450.00,
         "boundary_status": "OFFICIAL",
-        "owner": "Municipal Corp"
+        "owner": "State Govt"
       },
       "geometry": {
         "type": "Polygon",
@@ -46,10 +50,12 @@
     {
       "type": "Feature",
       "properties": {
-        "parcel_id": "P-003",
-        "area": 1350,
+        "parcel_id": "PLOT-21",
+        "plot_sector": "Plot 21, Sector 3",
+        "location": "Nagpur, Maharashtra",
+        "area": 600.00,
         "boundary_status": "OFFICIAL",
-        "owner": "Private"
+        "owner": "Municipal Corp"
       },
       "geometry": {
         "type": "Polygon",
@@ -60,6 +66,75 @@
             [79.0826, 21.1426],
             [79.0820, 21.1426],
             [79.0820, 21.1420]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "PLOT-09",
+        "plot_sector": "Plot 9, Sector 15",
+        "location": "Nagpur, Maharashtra",
+        "area": 550.00,
+        "boundary_status": "OFFICIAL",
+        "owner": "Priya Verma"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.0830, 21.1430],
+            [79.0835, 21.1430],
+            [79.0835, 21.1435],
+            [79.0830, 21.1435],
+            [79.0830, 21.1430]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "PLOT-33",
+        "plot_sector": "Plot 33, Sector 8",
+        "location": "Nagpur, Maharashtra",
+        "area": 520.00,
+        "boundary_status": "OFFICIAL",
+        "owner": "Anil Gupta"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.0840, 21.1440],
+            [79.0845, 21.1440],
+            [79.0845, 21.1445],
+            [79.0840, 21.1445],
+            [79.0840, 21.1440]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "parcel_id": "P-009",
+        "plot_sector": "Plot P-009, Ward 12",
+        "location": "Demo Village, Ward 12",
+        "area": 1250.00,
+        "boundary_status": "OFFICIAL",
+        "owner": "Revenue Dept"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [79.0850, 21.1450],
+            [79.0855, 21.1450],
+            [79.0855, 21.1455],
+            [79.0850, 21.1455],
+            [79.0850, 21.1450]
           ]
         ]
       }

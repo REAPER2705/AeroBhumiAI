@@ -16,15 +16,15 @@ export const apiClient = {
   // Parcel endpoints
   listParcels: async () => {
     const res = await api.get('/parcels');
-    // Backend returns {success: true, parcels: [...]}
-    const parcels = res.data?.parcels || [];
+    const data = res.data;
+    const parcels = Array.isArray(data) ? data : (data?.parcels || []);
     return { data: parcels };
   },
   
   getParcel: async (parcelId: string) => {
     const res = await api.get(`/parcels/${parcelId}`);
-    // Backend returns {success: true, parcel: {...}}
-    const parcel = res.data?.parcel || null;
+    const data = res.data;
+    const parcel = data?.parcel || (data?.parcel_id ? data : null);
     return { data: parcel };
   },
   

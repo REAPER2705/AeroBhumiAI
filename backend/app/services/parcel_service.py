@@ -16,10 +16,12 @@ from typing import Dict, Any, Optional, List, Tuple
 
 def get_parcels_file_path() -> str:
     """Get path to parcels GeoJSON file."""
-    # __file__ is backend/app/services/parcel_service.py
-    # Go up 4 levels to reach project root
     base_dir = Path(__file__).parent.parent.parent.parent
-    return str(base_dir / "data" / "parcels" / "parcels.geojson")
+    path1 = base_dir / "data" / "parcels" / "parcels.geojson"
+    path2 = Path(__file__).parent.parent.parent / "data" / "parcels" / "parcels.geojson"
+    if path1.exists():
+        return str(path1)
+    return str(path2)
 
 
 class ParcelError(Exception):
