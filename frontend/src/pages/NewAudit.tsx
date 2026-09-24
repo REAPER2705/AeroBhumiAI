@@ -312,29 +312,29 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
   // SCREEN 3: Upload Drone Image / GeoTIFF
   if (step === 'select' || step === 'upload') {
     return (
-      <div className="p-8 max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Upload Drone Image / GeoTIFF</h1>
-        <p className="text-gray-500 mb-6 text-sm">Upload drone orthomosaic image (GeoTIFF) for the selected parcel.</p>
+      <div className="p-8 max-w-4xl mx-auto bg-[#0f0f0f]">
+        <h1 className="text-2xl font-bold text-white mb-1">Upload Drone Image / GeoTIFF</h1>
+        <p className="text-gray-400 mb-6 text-sm">Upload drone orthomosaic image (GeoTIFF) for the selected parcel.</p>
 
         {/* 3 Step Indicator Header */}
-        <div className="flex items-center gap-8 mb-8 bg-white p-4 rounded-xl border border-gray-200 text-xs font-bold shadow-sm">
-          <div className="flex items-center gap-2 text-green-600 border-b-2 border-green-600 pb-1">
-            <span className="w-5 h-5 rounded-full bg-green-600 text-white flex items-center justify-center text-[10px]">1</span>
+        <div className="flex items-center gap-8 mb-8 bg-[#1a1a1a] p-4 rounded-xl border border-[#2a2a2a] text-xs font-bold shadow-sm">
+          <div className="flex items-center gap-2 text-[#00ff66] border-b-2 border-[#00ff66] pb-1">
+            <span className="w-5 h-5 rounded-full bg-[#00ff66] text-[#0f0f0f] flex items-center justify-center text-[10px]">1</span>
             Upload File
           </div>
           <div className="flex items-center gap-2 text-gray-400">
-            <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-[10px]">2</span>
+            <span className="w-5 h-5 rounded-full bg-[#2a2a2a] text-gray-500 flex items-center justify-center text-[10px]">2</span>
             Configure
           </div>
           <div className="flex items-center gap-2 text-gray-400">
-            <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center text-[10px]">3</span>
+            <span className="w-5 h-5 rounded-full bg-[#2a2a2a] text-gray-500 flex items-center justify-center text-[10px]">3</span>
             Preview
           </div>
         </div>
 
-        {error && <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-lg">{error}</div>}
+        {error && <div className="mb-6 p-4 bg-[#ff3333] bg-opacity-20 text-[#ff3333] rounded-lg">{error}</div>}
 
-        <div className={`bg-white border-2 border-dashed border-gray-300 rounded-xl p-12 flex flex-col items-center justify-center mb-6 relative ${loading ? 'opacity-50' : ''}`}>
+        <div className={`bg-[#1a1a1a] border-2 border-dashed border-[#2a2a2a] rounded-xl p-12 flex flex-col items-center justify-center mb-6 relative ${loading ? 'opacity-50' : ''}`}>
           {!loading && (
             <input 
               type="file" 
@@ -342,33 +342,33 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
               onChange={(e) => { if (e.target.files?.[0]) handleFileUpload(e.target.files[0]); }} 
             />
           )}
-          <UploadCloud className="w-12 h-12 text-gray-400 mb-4" />
-          <p className="font-bold text-gray-700 mb-1">
+          <UploadCloud className="w-12 h-12 text-gray-500 mb-4" />
+          <p className="font-bold text-gray-100 mb-1">
             {loading ? 'Uploading & Processing Drone Image...' : 'Drag & drop your GeoTIFF file here'}
           </p>
-          <p className="text-xs text-gray-400 mb-4">or</p>
-          <button className="bg-green-600 text-white px-6 py-2 rounded-lg font-bold text-xs pointer-events-none mb-4">
+          <p className="text-xs text-gray-500 mb-4">or</p>
+          <button className="bg-[#00ff66] text-[#0f0f0f] px-6 py-2 rounded-lg font-bold text-xs pointer-events-none mb-4">
             {loading ? 'Uploading...' : 'Browse File'}
           </button>
-          <p className="text-[11px] text-gray-400">Supported formats: .tif, .tiff (GeoTIFF) • Max file size: 500MB</p>
+          <p className="text-[11px] text-gray-500">Supported formats: .tif, .tiff (GeoTIFF) • Max file size: 500MB</p>
           
           <button 
             onClick={() => setStep('draw')} 
-            className="mt-4 text-xs font-bold text-gray-500 hover:text-green-600 underline relative z-10"
+            className="mt-4 text-xs font-bold text-gray-400 hover:text-[#00ff66] underline relative z-10"
           >
             Skip Upload (Use Satellite)
           </button>
         </div>
 
         {/* Selected Parcel Card */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 flex justify-between items-center shadow-sm">
+        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 flex justify-between items-center shadow-sm">
           <div>
-            <p className="text-xs text-gray-500 font-bold mb-1">Selected Parcel</p>
+            <p className="text-xs text-gray-400 font-bold mb-1">Selected Parcel</p>
             <div className="flex items-center gap-3">
               <select 
                 value={selectedParcelId} 
                 onChange={(e) => setSelectedParcelId(e.target.value)}
-                className="font-bold text-gray-900 border border-gray-300 rounded px-2 py-1 text-sm bg-gray-50"
+                className="font-bold text-white border border-[#2a2a2a] rounded px-2 py-1 text-sm bg-[#2a2a2a]"
               >
                 <option value="">-- Select a Parcel --</option>
                 {parcels.map((p) => (
@@ -377,15 +377,15 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
                   </option>
                 ))}
               </select>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-gray-400">
                 {selectedParcel?.parcel_id || 'No parcel selected'}
               </span>
             </div>
           </div>
           <div className="text-right flex items-center gap-4">
             <div>
-              <p className="text-xs text-gray-500 font-bold mb-1">Area</p>
-              <p className="font-bold text-gray-900 text-sm">
+              <p className="text-xs text-gray-400 font-bold mb-1">Area</p>
+              <p className="font-bold text-white text-sm">
                 {selectedParcel?.area ? `${selectedParcel.area.toFixed(2)} sq.m.` : 'N/A'}
               </p>
             </div>
@@ -398,54 +398,54 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
   // SCREEN 4: Audit Map
   if (step === 'draw') {
     return (
-      <div className="p-8 max-w-6xl mx-auto flex flex-col h-full">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Audit Map</h1>
-        <p className="text-gray-500 mb-6 text-sm">Define parcel boundary and building footprint for analysis.</p>
+      <div className="p-8 max-w-6xl mx-auto flex flex-col h-full bg-[#0f0f0f]">
+        <h1 className="text-2xl font-bold text-white mb-1">Audit Map</h1>
+        <p className="text-gray-400 mb-6 text-sm">Define parcel boundary and building footprint for analysis.</p>
         
-        {error && <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg">{error}</div>}
+        {error && <div className="mb-4 p-4 bg-[#ff3333] bg-opacity-20 text-[#ff3333] rounded-lg">{error}</div>}
 
         <div className="flex gap-6 flex-1 min-h-[520px]">
           <div className="w-80 flex flex-col gap-4">
-            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 shadow-sm">
               <p className="text-xs text-gray-400 font-bold uppercase mb-2">Audit ID</p>
-              <p className="font-bold text-gray-900 text-sm mb-4">AUD-2025-019</p>
+              <p className="font-bold text-white text-sm mb-4">AUD-2025-019</p>
 
               <div className="mb-4">
-                <p className="text-xs font-bold text-gray-800 mb-1">1. Draw Legal Boundary</p>
-                <p className="text-[11px] text-gray-500">Draw the legal parcel boundary.</p>
+                <p className="text-xs font-bold text-gray-100 mb-1">1. Draw Legal Boundary</p>
+                <p className="text-[11px] text-gray-400">Draw the legal parcel boundary.</p>
               </div>
 
               <div>
-                <p className="text-xs font-bold text-gray-800 mb-1">2. Draw Proposed Building</p>
-                <p className="text-[11px] text-gray-500">Draw the proposed building footprint.</p>
+                <p className="text-xs font-bold text-gray-100 mb-1">2. Draw Proposed Building</p>
+                <p className="text-[11px] text-gray-400">Draw the proposed building footprint.</p>
               </div>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-              <p className="text-xs font-bold text-gray-900 mb-3">3. Actions</p>
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 shadow-sm">
+              <p className="text-xs font-bold text-white mb-3">3. Actions</p>
               <div className="flex gap-2 mb-3">
-                <button onClick={() => setHouseGeometry(null)} className="flex-1 py-1.5 border border-gray-300 rounded text-xs font-bold text-gray-700 hover:bg-gray-50">Clear All</button>
+                <button onClick={() => setHouseGeometry(null)} className="flex-1 py-1.5 border border-[#2a2a2a] rounded text-xs font-bold text-gray-300 hover:bg-[#2a2a2a]">Clear All</button>
               </div>
               <button 
                 onClick={handleRunBuildCheck}
-                className="w-full text-xs bg-green-600 text-white py-2.5 rounded-lg font-bold hover:bg-green-700 shadow-sm"
+                className="w-full text-xs bg-[#00ff66] text-[#0f0f0f] py-2.5 rounded-lg font-bold hover:brightness-110 shadow-sm transition-all"
               >
                 {loading ? 'Analyzing...' : 'Check Compliance'}
               </button>
             </div>
 
             {/* Selected Parcel Summary Card */}
-            <div className="mt-auto bg-white border border-gray-200 rounded-xl p-4 shadow-sm text-xs">
-              <p className="font-bold text-gray-500 uppercase tracking-wider mb-2 text-[10px]">Selected Parcel</p>
-              <p className="font-bold text-gray-900">{selectedParcel?.parcel_id || 'None'}</p>
-              <p className="text-gray-500 text-[11px]">{selectedParcel?.boundary_status || 'Unknown'}</p>
-              <p className="text-gray-900 font-bold mt-2">
+            <div className="mt-auto bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 shadow-sm text-xs">
+              <p className="font-bold text-gray-400 uppercase tracking-wider mb-2 text-[10px]">Selected Parcel</p>
+              <p className="font-bold text-white">{selectedParcel?.parcel_id || 'None'}</p>
+              <p className="text-gray-400 text-[11px]">{selectedParcel?.boundary_status || 'Unknown'}</p>
+              <p className="text-gray-100 font-bold mt-2">
                 Area: {selectedParcel?.area ? `${selectedParcel.area.toFixed(2)}` : 'N/A'} sq.m.
               </p>
             </div>
           </div>
 
-          <div className="flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden relative shadow-sm">
+          <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden relative shadow-sm">
             <MapWorkspace 
               parcelGeometry={selectedParcel?.geometry} 
               houseGeometry={houseGeometry}
@@ -462,50 +462,50 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
   if (step === 'spatial') {
     const metrics = buildCheckResult?.metrics || {};
     return (
-      <div className="p-8 max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Spatial Analysis (Build Check)</h1>
-        <p className="text-gray-500 mb-6 text-sm">Automated GIS analysis of parcel vs building footprint.</p>
+      <div className="p-8 max-w-6xl mx-auto bg-[#0f0f0f]">
+        <h1 className="text-2xl font-bold text-white mb-1">Spatial Analysis (Build Check)</h1>
+        <p className="text-gray-400 mb-6 text-sm">Automated GIS analysis of parcel vs building footprint.</p>
 
         <div className="flex gap-6 min-h-[480px]">
           {/* Analysis Metrics Left Box */}
-          <div className="w-96 bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
+          <div className="w-96 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 shadow-sm flex flex-col justify-between">
             <div>
-              <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-3 mb-4">Analysis Metrics</h2>
+              <h2 className="text-sm font-bold text-white border-b border-[#2a2a2a] pb-3 mb-4">Analysis Metrics</h2>
               <div className="flex flex-col gap-3 text-xs">
                 <div className="flex justify-between py-1">
-                  <span className="text-gray-500">Parcel Area (Calculated)</span>
-                  <span className="font-bold text-gray-900">{metrics.parcel_area_m2 ? metrics.parcel_area_m2.toFixed(2) : 'N/A'} sq.m.</span>
+                  <span className="text-gray-400">Parcel Area (Calculated)</span>
+                  <span className="font-bold text-white">{metrics.parcel_area_m2 ? metrics.parcel_area_m2.toFixed(2) : 'N/A'} sq.m.</span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-gray-500">Building Total Area</span>
-                  <span className="font-bold text-gray-900">{metrics.house_area_m2 ? metrics.house_area_m2.toFixed(2) : 'N/A'} sq.m.</span>
+                  <span className="text-gray-400">Building Total Area</span>
+                  <span className="font-bold text-white">{metrics.house_area_m2 ? metrics.house_area_m2.toFixed(2) : 'N/A'} sq.m.</span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-gray-500">Building Area (Inside Parcel)</span>
-                  <span className="font-bold text-green-600">
+                  <span className="text-gray-400">Building Area (Inside Parcel)</span>
+                  <span className="font-bold text-[#00ff66]">
                     {metrics.intersection_area_m2 ? metrics.intersection_area_m2.toFixed(2) : '0.00'} sq.m.
                   </span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-gray-500">Building Area (Outside Parcel)</span>
-                  <span className={`font-bold ${metrics.outside_area_m2 > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <span className="text-gray-400">Building Area (Outside Parcel)</span>
+                  <span className={`font-bold ${metrics.outside_area_m2 > 0 ? 'text-[#ff3333]' : 'text-[#00ff66]'}`}>
                     {metrics.outside_area_m2 ? metrics.outside_area_m2.toFixed(2) : '0.00'} sq.m.
                   </span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-gray-500">Outside Percentage</span>
-                  <span className={`font-bold ${metrics.outside_percentage > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <span className="text-gray-400">Outside Percentage</span>
+                  <span className={`font-bold ${metrics.outside_percentage > 0 ? 'text-[#ff3333]' : 'text-[#00ff66]'}`}>
                     {metrics.outside_percentage ? metrics.outside_percentage.toFixed(2) : '0.00'}%
                   </span>
                 </div>
               </div>
 
               {/* Alert Card */}
-              <div className={`mt-6 rounded-xl p-4 ${metrics.outside_area_m2 > 0 ? 'bg-red-50 border border-red-200' : 'bg-green-50 border border-green-200'}`}>
-                <p className={`font-bold text-xs mb-1 ${metrics.outside_area_m2 > 0 ? 'text-red-600' : 'text-green-600'}`}>
+              <div className={`mt-6 rounded-xl p-4 ${metrics.outside_area_m2 > 0 ? 'bg-[#ff3333] bg-opacity-10 border border-[#ff3333] border-opacity-30' : 'bg-[#00ff66] bg-opacity-10 border border-[#00ff66] border-opacity-30'}`}>
+                <p className={`font-bold text-xs mb-1 ${metrics.outside_area_m2 > 0 ? 'text-[#ff3333]' : 'text-[#00ff66]'}`}>
                   {buildCheckResult?.result === 'CLEAR' ? 'No Encroachment' : 'Encroachment Detected'}
                 </p>
-                <p className={`text-[11px] ${metrics.outside_area_m2 > 0 ? 'text-red-700' : 'text-green-700'}`}>
+                <p className={`text-[11px] ${metrics.outside_area_m2 > 0 ? 'text-[#ff3333] text-opacity-80' : 'text-[#00ff66] text-opacity-80'}`}>
                   {buildCheckResult?.result === 'CLEAR' 
                     ? 'Building is entirely within the parcel boundary.' 
                     : 'Portion of the building extends outside the parcel boundary.'}
@@ -514,18 +514,18 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
             </div>
 
             <div className="flex justify-between mt-6">
-              <button onClick={() => setStep('draw')} className="px-4 py-2 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50">Back</button>
+              <button onClick={() => setStep('draw')} className="px-4 py-2 border border-[#2a2a2a] rounded-lg text-xs font-bold text-gray-300 hover:bg-[#2a2a2a]">Back</button>
               <div className="flex gap-2">
                 {/* Show flag button if conflict detected */}
                 {buildCheckResult?.result !== 'CLEAR' && (
                   <button 
                     onClick={handleGenerateReportAndFlag}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700"
+                    className="px-4 py-2 bg-[#ff3333] text-white rounded-lg text-xs font-bold hover:brightness-110 transition-all"
                   >
                     Generate Report & Flag
                   </button>
                 )}
-                <button onClick={handleRunAudit} className="px-4 py-2 bg-green-600 rounded-lg text-xs font-bold text-white hover:bg-green-700 disabled:opacity-50" disabled={!buildCheckResult}>
+                <button onClick={handleRunAudit} className="px-4 py-2 bg-[#00ff66] text-[#0f0f0f] rounded-lg text-xs font-bold hover:brightness-110 disabled:opacity-50 transition-all" disabled={!buildCheckResult}>
                   Continue to Audit Analysis
                 </button>
               </div>
@@ -533,7 +533,7 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
           </div>
 
           {/* Interactive Map View with Legend */}
-          <div className="flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden relative shadow-sm flex flex-col">
+          <div className="flex-1 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl overflow-hidden relative shadow-sm flex flex-col">
             <div className="flex-1 relative">
               <MapWorkspace 
                 parcelGeometry={selectedParcel?.geometry} 
@@ -544,7 +544,7 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
               />
             </div>
             {/* Color Legend */}
-            <div className="p-3 bg-white border-t border-gray-200 flex items-center justify-around text-xs font-medium">
+            <div className="p-3 bg-[#2a2a2a] border-t border-[#2a2a2a] flex items-center justify-around text-xs font-medium text-gray-300">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 bg-green-500 rounded-sm"></span>
                 <span>Parcel Boundary</span>
@@ -570,56 +570,56 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
     const resolution = auditResult?.resolution || {};
     
     return (
-      <div className="p-8 max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Audit Analysis</h1>
-        <p className="text-gray-500 mb-6 text-sm">AI-powered land compliance audit results.</p>
+      <div className="p-8 max-w-5xl mx-auto bg-[#0f0f0f]">
+        <h1 className="text-2xl font-bold text-white mb-1">Audit Analysis</h1>
+        <p className="text-gray-400 mb-6 text-sm">AI-powered land compliance audit results.</p>
 
         <div className="flex gap-6">
           <div className="w-1/3 flex flex-col gap-6">
             {/* Diagnosis Card */}
-            <div className={`rounded-xl p-6 border ${auditResult?.result === 'CLEAR' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
-              <p className={`text-[10px] uppercase font-bold tracking-wider mb-2 ${auditResult?.result === 'CLEAR' ? 'text-green-600' : 'text-red-600'}`}>
+            <div className={`rounded-xl p-6 border ${auditResult?.result === 'CLEAR' ? 'border-[#00ff66] border-opacity-30 bg-[#00ff66] bg-opacity-10' : 'border-[#ff3333] border-opacity-30 bg-[#ff3333] bg-opacity-10'}`}>
+              <p className={`text-[10px] uppercase font-bold tracking-wider mb-2 ${auditResult?.result === 'CLEAR' ? 'text-[#00ff66]' : 'text-[#ff3333]'}`}>
                 Diagnosis
               </p>
-              <h3 className={`text-base font-black uppercase mb-2 ${auditResult?.result === 'CLEAR' ? 'text-green-600' : 'text-red-600'}`}>
+              <h3 className={`text-base font-black uppercase mb-2 ${auditResult?.result === 'CLEAR' ? 'text-[#00ff66]' : 'text-[#ff3333]'}`}>
                 {auditResult?.result || 'ANALYSIS'}
               </h3>
-              <p className={`text-xs leading-relaxed ${auditResult?.result === 'CLEAR' ? 'text-green-800' : 'text-red-800'}`}>
+              <p className={`text-xs leading-relaxed ${auditResult?.result === 'CLEAR' ? 'text-[#00ff66] text-opacity-80' : 'text-[#ff3333] text-opacity-80'}`}>
                 {auditResult?.problem || 'Performing analysis...'}
               </p>
             </div>
 
             {/* Analysis Summary Card */}
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm text-xs flex flex-col gap-2">
-              <p className="font-bold text-gray-900 border-b border-gray-100 pb-2 mb-1">Analysis Summary</p>
-              <div className="flex justify-between"><span className="text-gray-500">Parcel ID</span><span className="font-bold">{selectedParcel?.parcel_id || 'N/A'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Boundary Status</span><span>{selectedParcel?.boundary_status || 'Unknown'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-500">Total Area</span><span>{selectedParcel?.area ? selectedParcel.area.toFixed(2) : 'N/A'} sq.m.</span></div>
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5 shadow-sm text-xs flex flex-col gap-2">
+              <p className="font-bold text-white border-b border-[#2a2a2a] pb-2 mb-1">Analysis Summary</p>
+              <div className="flex justify-between"><span className="text-gray-400">Parcel ID</span><span className="font-bold text-white">{selectedParcel?.parcel_id || 'N/A'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Boundary Status</span><span className="text-gray-300">{selectedParcel?.boundary_status || 'Unknown'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-400">Total Area</span><span className="text-gray-300">{selectedParcel?.area ? selectedParcel.area.toFixed(2) : 'N/A'} sq.m.</span></div>
             </div>
 
             {/* Metrics Details */}
             {buildCheckResult?.metrics && (
-              <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm text-xs flex flex-col gap-2">
-                <p className="font-bold text-gray-900 border-b border-gray-100 pb-2 mb-1">Metrics</p>
-                <div className="flex justify-between"><span className="text-gray-500">Building Area</span><span className="font-bold">{buildCheckResult.metrics.house_area_m2?.toFixed(2)} sq.m.</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Outside Area</span><span className={`font-bold ${buildCheckResult.metrics.outside_area_m2 > 0 ? 'text-red-600' : 'text-green-600'}`}>{buildCheckResult.metrics.outside_area_m2?.toFixed(2)} sq.m.</span></div>
-                <div className="flex justify-between"><span className="text-gray-500">Outside %</span><span className={`font-bold ${buildCheckResult.metrics.outside_percentage > 0 ? 'text-red-600' : 'text-green-600'}`}>{buildCheckResult.metrics.outside_percentage?.toFixed(2)}%</span></div>
+              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-5 shadow-sm text-xs flex flex-col gap-2">
+                <p className="font-bold text-white border-b border-[#2a2a2a] pb-2 mb-1">Metrics</p>
+                <div className="flex justify-between"><span className="text-gray-400">Building Area</span><span className="font-bold text-white">{buildCheckResult.metrics.house_area_m2?.toFixed(2)} sq.m.</span></div>
+                <div className="flex justify-between"><span className="text-gray-400">Outside Area</span><span className={`font-bold ${buildCheckResult.metrics.outside_area_m2 > 0 ? 'text-[#ff3333]' : 'text-[#00ff66]'}`}>{buildCheckResult.metrics.outside_area_m2?.toFixed(2)} sq.m.</span></div>
+                <div className="flex justify-between"><span className="text-gray-400">Outside %</span><span className={`font-bold ${buildCheckResult.metrics.outside_percentage > 0 ? 'text-[#ff3333]' : 'text-[#00ff66]'}`}>{buildCheckResult.metrics.outside_percentage?.toFixed(2)}%</span></div>
               </div>
             )}
           </div>
 
           <div className="w-2/3 flex flex-col gap-6">
             {/* Resolution (Recommended Action) Card */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Resolution (Recommended Action)</h3>
-              <p className="text-sm font-bold text-gray-900 mb-4">
+            <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 shadow-sm">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Resolution (Recommended Action)</h3>
+              <p className="text-sm font-bold text-white mb-4">
                 {resolution.recommended_action || 'Analyzing...'}
               </p>
               
               {resolution.next_steps && resolution.next_steps.length > 0 && (
                 <>
-                  <p className="text-xs font-bold text-gray-700 mb-2">Recommended Actions:</p>
-                  <ul className="list-disc pl-5 text-xs text-gray-600 flex flex-col gap-2">
+                  <p className="text-xs font-bold text-gray-300 mb-2">Recommended Actions:</p>
+                  <ul className="list-disc pl-5 text-xs text-gray-400 flex flex-col gap-2">
                     {resolution.next_steps.map((step: string, i: number) => (
                       <li key={i}>{step}</li>
                     ))}
@@ -630,7 +630,7 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
 
             {/* AI Summary */}
             {auditResult?.summary && (
-              <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 shadow-sm">
                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">AI Summary</h3>
                 <p className="text-xs text-gray-700 leading-relaxed">
                   {auditResult.summary}
@@ -906,7 +906,7 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
         <div className="flex justify-between">
           <button 
             onClick={() => { console.log('Back clicked'); setStep('spatial'); }} 
-            className="px-6 py-2 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50"
+            className="px-6 py-2 border border-[#2a2a2a] rounded-lg text-xs font-bold text-[#00d4ff] hover:brightness-125 transition-all"
           >
             Back
           </button>
@@ -916,7 +916,7 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
               handleFlagForVerification();
             }}
             disabled={flagging}
-            className="px-6 py-3 bg-green-700 text-white rounded-lg text-xs font-bold hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-3 bg-[#00ff66] text-dark-bg rounded-lg text-xs font-bold hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {flagging ? 'Submitting...' : 'Submit for Government Verification'}
           </button>

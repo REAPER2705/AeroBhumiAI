@@ -4,7 +4,6 @@ import {
   MapPin, 
   UploadCloud, 
   Map as MapIcon, 
-  FileCheck, 
   FileText, 
   User, 
   Layers,
@@ -28,8 +27,6 @@ export default function App() {
       setInitialAuditStep('select');
     } else if (tabName === 'Audit Map') {
       setInitialAuditStep('draw');
-    } else if (tabName === 'My Audits' || tabName === 'New Audit') {
-      setInitialAuditStep('analyze');
     }
   };
 
@@ -41,7 +38,6 @@ export default function App() {
         return <Parcels setActiveTab={handleTabChange} />;
       case 'Drone Upload':
       case 'Audit Map':
-      case 'My Audits':
       case 'New Audit':
         return <NewAudit key={activeTab} setActiveTab={handleTabChange} initialStep={initialAuditStep} />;
       case 'Reports':
@@ -54,18 +50,18 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 font-sans text-gray-900">
-      <div className="w-64 bg-white border-r border-gray-200 flex flex-col justify-between flex-shrink-0">
+    <div className="flex h-screen bg-[#0f0f0f] font-sans text-gray-100">
+      <div className="w-64 bg-[#1a1a1a] border-r border-[#2a2a2a] flex flex-col justify-between flex-shrink-0">
         <div>
           {/* Mode Selector Header */}
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-[#2a2a2a]">
             <div className="flex gap-2 mb-4">
               <button
                 onClick={() => setMode('citizen')}
                 className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
                   mode === 'citizen'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-[#0066ff] text-white'
+                    : 'bg-[#2a2a2a] text-gray-400 hover:text-gray-300'
                 }`}
               >
                 Citizen
@@ -74,8 +70,8 @@ export default function App() {
                 onClick={() => setMode('government')}
                 className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition-colors ${
                   mode === 'government'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-[#0066ff] text-white'
+                    : 'bg-[#2a2a2a] text-gray-400 hover:text-gray-300'
                 }`}
               >
                 Government
@@ -85,8 +81,8 @@ export default function App() {
 
           {/* Logo */}
           <div className="p-6 flex items-center gap-2">
-            <Layers className="w-6 h-6 text-green-600" />
-            <span className="text-xl font-bold">AeroBhumi<span className="text-green-600">AI</span></span>
+            <Layers className="w-6 h-6 text-[#00ff66]" />
+            <span className="text-xl font-bold text-gray-100">AeroBhumi<span className="text-[#00ff66]">AI</span></span>
           </div>
 
           {/* Navigation - Citizen Mode */}
@@ -97,7 +93,6 @@ export default function App() {
                 { name: 'Parcels', icon: MapPin },
                 { name: 'Drone Upload', icon: UploadCloud },
                 { name: 'Audit Map', icon: MapIcon },
-                { name: 'My Audits', icon: FileCheck },
                 { name: 'Reports', icon: FileText },
                 { name: 'Track Case', icon: Search }
               ].map((item) => (
@@ -106,8 +101,8 @@ export default function App() {
                   onClick={() => handleTabChange(item.name)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === item.name 
-                      ? 'bg-green-600 text-white shadow-sm' 
-                      : 'text-gray-600 hover:bg-green-50 hover:text-green-700'
+                      ? 'bg-[#0066ff] text-white shadow-sm' 
+                      : 'text-gray-400 hover:bg-[#2a2a2a] hover:text-[#00d4ff]'
                   }`}
                 >
                   <item.icon className="w-5 h-5" />
@@ -121,7 +116,7 @@ export default function App() {
           {mode === 'government' && (
             <nav className="mt-2 flex flex-col gap-1 px-3">
               <button
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors bg-green-600 text-white shadow-sm"
+                className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors bg-[#0066ff] text-white shadow-sm"
               >
                 <MapPin className="w-5 h-5" />
                 Verification
@@ -132,20 +127,20 @@ export default function App() {
 
         {/* User Profile - Citizen Mode Only */}
         {mode === 'citizen' && (
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-[#2a2a2a]">
             <div className="flex items-center gap-3 px-2">
-              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-700">
+              <div className="w-8 h-8 rounded-full bg-[#0066ff] bg-opacity-20 flex items-center justify-center text-[#00d4ff]">
                 <User className="w-4 h-4" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-bold text-gray-900">Demo User</p>
+                <p className="text-sm font-bold text-gray-100">Demo User</p>
                 <p className="text-xs text-gray-500">Administrator</p>
               </div>
             </div>
           </div>
         )}
       </div>
-      <div className="flex-1 overflow-auto bg-gray-50">
+      <div className="flex-1 overflow-auto bg-[#0f0f0f]">
         {mode === 'government' ? (
           <GovernmentVerification />
         ) : (

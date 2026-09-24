@@ -228,86 +228,86 @@ export default function GovernmentVerification() {
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header Bar */}
-      <div className="border-b border-gray-200 bg-white px-6 py-3">
+      <div className="border-b border-[#2a2a2a] bg-[#1a1a1a] px-6 py-3">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-bold text-gray-500 tracking-wide">GOVERNMENT OFFICER</span>
-              <div className="w-1 h-1 rounded-full bg-gray-300"></div>
-              <span className="text-xs font-semibold text-green-700">VERIFICATION MODE ACTIVE</span>
+              <span className="text-xs font-bold text-gray-400 tracking-wide">GOVERNMENT OFFICER</span>
+              <div className="w-1 h-1 rounded-full bg-[#2a2a2a]"></div>
+              <span className="text-xs font-semibold text-[#00ff66]">VERIFICATION MODE ACTIVE</span>
             </div>
-            <h1 className="text-xl font-bold text-gray-900">Land Record Verification System</h1>
+            <h1 className="text-xl font-bold text-gray-100">Land Record Verification System</h1>
           </div>
-          <div className="text-right text-xs text-gray-600">
+          <div className="text-right text-xs text-gray-400">
             <p>Automated Cadastral Analysis Platform</p>
-            <p className="text-gray-400 mt-1">Maharashtra Revenue Department</p>
+            <p className="text-gray-500 mt-1">Maharashtra Revenue Department</p>
           </div>
         </div>
       </div>
 
       {/* Parcel Identification Form */}
-      <div className="border-b border-gray-200 bg-white px-6 py-4">
+      <div className="border-b border-[#2a2a2a] bg-[#1a1a1a] px-6 py-4">
         <div className="mb-3">
-          <h3 className="text-sm font-bold text-gray-900 mb-3">Identify Parcel / Land Record</h3>
+          <h3 className="text-sm font-bold text-gray-100 mb-3">Identify Parcel / Land Record</h3>
         </div>
         <div className="grid grid-cols-4 gap-3 mb-3">
           {/* Location */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Location</label>
+            <label className="block text-xs font-semibold text-gray-300 mb-1">Location</label>
             <input
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="Street 45, Icon Colony"
-              className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-700 focus:ring-1 focus:ring-green-700"
+              className="w-full px-2.5 py-1.5 text-xs border border-[#2a2a2a] rounded bg-[#2a2a2a] text-gray-100 placeholder-gray-500 focus:outline-none focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan"
             />
           </div>
 
           {/* Plot Number */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Plot Number</label>
+            <label className="block text-xs font-semibold text-gray-300 mb-1">Plot Number</label>
             <input
               type="text"
               value={plotNumber}
               onChange={(e) => setPlotNumber(e.target.value)}
               placeholder="P-009"
-              className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-700 focus:ring-1 focus:ring-green-700"
+              className="w-full px-2.5 py-1.5 text-xs border border-[#2a2a2a] rounded bg-[#2a2a2a] text-gray-100 placeholder-gray-500 focus:outline-none focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan"
             />
           </div>
 
           {/* Registration / Record Number */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Registration / Record No.</label>
+            <label className="block text-xs font-semibold text-gray-300 mb-1">Registration / Record No.</label>
             <input
               type="text"
               value={registrationNumber}
               onChange={(e) => setRegistrationNumber(e.target.value)}
               placeholder="REG-2026-009"
-              className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-700 focus:ring-1 focus:ring-green-700"
+              className="w-full px-2.5 py-1.5 text-xs border border-[#2a2a2a] rounded bg-[#2a2a2a] text-gray-100 placeholder-gray-500 focus:outline-none focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan"
             />
           </div>
 
           {/* Survey / Khasra Reference */}
           <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Survey / Khasra Ref.</label>
+            <label className="block text-xs font-semibold text-gray-300 mb-1">Survey / Khasra Ref.</label>
             <input
               type="text"
               value={surveyReference}
               onChange={(e) => setSurveyReference(e.target.value)}
               placeholder="KSR-1189"
-              className="w-full px-2.5 py-1.5 text-xs border border-gray-300 rounded bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-700 focus:ring-1 focus:ring-green-700"
+              className="w-full px-2.5 py-1.5 text-xs border border-[#2a2a2a] rounded bg-[#2a2a2a] text-gray-100 placeholder-gray-500 focus:outline-none focus:border-accent-cyan focus:ring-1 focus:ring-accent-cyan"
             />
           </div>
         </div>
 
         <div className="flex items-center justify-between">
-          <button className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-700 text-white rounded text-xs font-semibold hover:bg-green-800 transition-colors">
+          <button className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#0066ff] text-white rounded text-xs font-semibold hover:brightness-110 transition-all">
             Continue to Map Verification
           </button>
 
           {/* Case List Dropdown */}
           <div className="flex items-center gap-2 text-xs">
-            <span className="text-gray-600 font-semibold">Cases in Queue:</span>
+            <span className="text-gray-300 font-semibold">Cases in Queue:</span>
             <select
               value={selectedCase?.caseId || selectedCase?.parcel_id || ''}
               onChange={(e) => {
@@ -347,7 +347,7 @@ export default function GovernmentVerification() {
                   console.log('  Available cases:', allGovernmentCases.map(c => c.caseId || c.parcel_id).join(', '));
                 }
               }}
-              className="px-2.5 py-1 text-xs border border-gray-300 rounded bg-white text-gray-900 font-semibold focus:outline-none focus:border-green-700"
+              className="px-2.5 py-1 text-xs border border-[#2a2a2a] rounded bg-[#2a2a2a] text-gray-100 font-semibold focus:outline-none focus:border-accent-cyan"
             >
               <option value="">-- Select a case --</option>
               {allGovernmentCases.map((c, idx) => {
@@ -364,7 +364,7 @@ export default function GovernmentVerification() {
                 );
               })}
             </select>
-            <span className="text-gray-600 font-semibold">
+            <span className="text-gray-300 font-semibold">
               ({allGovernmentCases.filter(c => c.isCitizenCase).length} citizen cases)
             </span>
           </div>
@@ -372,12 +372,12 @@ export default function GovernmentVerification() {
       </div>
 
       {/* Upload Section */}
-      <div className="border-b border-gray-200 bg-gray-50 px-6 py-3">
+      <div className="border-b border-[#2a2a2a] bg-[#2a2a2a] px-6 py-3">
         <div className="flex items-center gap-4">
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isProcessing}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-green-700 text-white rounded text-sm font-semibold hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 bg-[#0066ff] text-white rounded text-sm font-semibold hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             <Upload className="w-4 h-4" />
             Upload Map
@@ -395,7 +395,7 @@ export default function GovernmentVerification() {
           <button
             onClick={handleLoadDemoMap}
             disabled={isProcessing}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded text-sm font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="inline-flex items-center gap-2 px-3 py-2 bg-[#2a2a2a] border border-[#2a2a2a] text-[#00d4ff] rounded text-sm font-semibold hover:brightness-125 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {isProcessing ? (
               <>
@@ -412,9 +412,9 @@ export default function GovernmentVerification() {
 
           {uploadedMap && (
             <>
-              <div className="h-5 w-px bg-gray-300"></div>
-              <div className="text-sm text-gray-700">
-                <p className="font-semibold text-gray-900">{uploadedMap.fileName}</p>
+              <div className="h-5 w-px bg-[#2a2a2a]"></div>
+              <div className="text-sm text-gray-300">
+                <p className="font-semibold text-gray-100">{uploadedMap.fileName}</p>
                 <p className="text-xs text-gray-500">{uploadedMap.fileSize}</p>
               </div>
             </>
@@ -422,15 +422,15 @@ export default function GovernmentVerification() {
 
           {isProcessing && (
             <>
-              <div className="h-5 w-px bg-gray-300 ml-auto mr-4"></div>
+              <div className="h-5 w-px bg-[#2a2a2a] ml-auto mr-4"></div>
               <div className="w-40">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-gray-700">Processing</span>
-                  <span className="text-xs font-semibold text-gray-700">{processingProgress}%</span>
+                  <span className="text-xs font-semibold text-gray-300">Processing</span>
+                  <span className="text-xs font-semibold text-gray-300">{processingProgress}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded h-1.5">
+                <div className="w-full bg-[#2a2a2a] rounded h-1.5">
                   <div 
-                    className="bg-green-700 h-1.5 rounded transition-all duration-300"
+                    className="bg-[#0066ff] h-1.5 rounded transition-all duration-300"
                     style={{ width: `${processingProgress}%` }}
                   ></div>
                 </div>
@@ -443,10 +443,10 @@ export default function GovernmentVerification() {
       {/* Main Content Area - 3 Columns */}
       <div className="flex-1 overflow-hidden flex gap-4 px-6 py-4">
         {/* LEFT PANEL: Uploaded Map */}
-        <div className="w-72 flex flex-col bg-white border border-gray-200 rounded text-sm flex-shrink-0">
+        <div className="w-72 flex flex-col bg-[#1a1a1a] border border-[#2a2a2a] rounded text-sm flex-shrink-0">
           {/* Panel Header */}
-          <div className="border-b border-gray-200 px-4 py-2.5 bg-gray-50">
-            <h3 className="font-bold text-gray-900 text-sm">UPLOADED MAP</h3>
+          <div className="border-b border-[#2a2a2a] px-4 py-2.5 bg-[#2a2a2a]">
+            <h3 className="font-bold text-gray-100 text-sm">UPLOADED MAP</h3>
           </div>
 
           {uploadedMap ? (
@@ -462,9 +462,9 @@ export default function GovernmentVerification() {
 
               {/* File Info */}
               <div className="px-3 pb-3">
-                <div className="bg-gray-50 border border-gray-200 rounded p-2.5 mb-3">
-                  <p className="text-xs font-semibold text-gray-900">{uploadedMap.fileName}</p>
-                  <div className="flex items-center gap-1 text-xs text-gray-600 mt-1">
+                <div className="bg-[#2a2a2a] border border-[#2a2a2a] rounded p-2.5 mb-3">
+                  <p className="text-xs font-semibold text-gray-100">{uploadedMap.fileName}</p>
+                  <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
                     <Clock className="w-3 h-3" />
                     <span>{uploadedMap.uploadTime.toLocaleTimeString()}</span>
                   </div>
@@ -473,39 +473,39 @@ export default function GovernmentVerification() {
                 {/* Processing Checkmarks */}
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-700 flex-shrink-0" />
-                    <span className="text-xs text-gray-700">Map image loaded</span>
+                    <CheckCircle2 className="w-4 h-4 text-[#00ff66] flex-shrink-0" />
+                    <span className="text-xs text-gray-300">Map image loaded</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-700 flex-shrink-0" />
-                    <span className="text-xs text-gray-700">Boundaries extracted</span>
+                    <CheckCircle2 className="w-4 h-4 text-[#00ff66] flex-shrink-0" />
+                    <span className="text-xs text-gray-300">Boundaries extracted</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-700 flex-shrink-0" />
-                    <span className="text-xs text-gray-700">Parcel numbers detected</span>
+                    <CheckCircle2 className="w-4 h-4 text-[#00ff66] flex-shrink-0" />
+                    <span className="text-xs text-gray-300">Parcel numbers detected</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-700 flex-shrink-0" />
-                    <span className="text-xs text-gray-700">Geometry validated</span>
+                    <CheckCircle2 className="w-4 h-4 text-[#00ff66] flex-shrink-0" />
+                    <span className="text-xs text-gray-300">Geometry validated</span>
                   </div>
                 </div>
               </div>
             </div>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 text-center">
-              <MapPin className="w-10 h-10 text-gray-300 mb-2" />
-              <p className="text-xs text-gray-500 font-semibold mb-1">No Map Uploaded</p>
-              <p className="text-xs text-gray-400">Upload scanned/hand-drawn map or load demo</p>
+              <MapPin className="w-10 h-10 text-gray-600 mb-2" />
+              <p className="text-xs text-gray-400 font-semibold mb-1">No Map Uploaded</p>
+              <p className="text-xs text-gray-500">Upload scanned/hand-drawn map or load demo</p>
             </div>
           )}
         </div>
 
         {/* CENTER PANEL: Spatial Map - Only show if map uploaded */}
         {uploadedMap ? (
-          <div className="flex-1 flex flex-col bg-white border border-gray-200 rounded overflow-hidden">
+          <div className="flex-1 flex flex-col bg-[#1a1a1a] border border-[#2a2a2a] rounded overflow-hidden">
             {/* Map Controls */}
-            <div className="border-b border-gray-200 px-4 py-2.5 bg-gray-50 flex items-center justify-between">
-              <div className="flex items-center gap-2 bg-white border border-gray-300 rounded p-1">
+            <div className="border-b border-[#2a2a2a] px-4 py-2.5 bg-[#2a2a2a] flex items-center justify-between">
+              <div className="flex items-center gap-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded p-1">
                 {[
                   { id: 'satellite', label: 'Satellite' },
                   { id: 'cadastral', label: 'Cadastral' },
@@ -518,9 +518,9 @@ export default function GovernmentVerification() {
                     className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors ${
                       mapView === view.id
                         ? view.id === 'conflict'
-                          ? 'bg-red-600 text-white'
-                          : 'bg-green-700 text-white'
-                        : 'text-gray-700 hover:text-gray-900'
+                          ? 'bg-[#ff3333] text-white'
+                          : 'bg-[#0066ff] text-white'
+                        : 'text-gray-400 hover:text-gray-300'
                     }`}
                   >
                     {view.label}
@@ -528,13 +528,13 @@ export default function GovernmentVerification() {
                 ))}
               </div>
 
-              <div className="flex items-center gap-2 bg-white border border-gray-300 rounded p-1">
+              <div className="flex items-center gap-2 bg-[#0f0f0f] border border-[#2a2a2a] rounded p-1">
                 <button
                   onClick={() => setShowMap3D(false)}
                   className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors ${
                     !showMap3D
-                      ? 'bg-green-700 text-white'
-                      : 'text-gray-700 hover:text-gray-900'
+                      ? 'bg-[#0066ff] text-white'
+                      : 'text-gray-400 hover:text-gray-300'
                   }`}
                 >
                   2D
@@ -543,8 +543,8 @@ export default function GovernmentVerification() {
                   onClick={() => setShowMap3D(true)}
                   className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors ${
                     showMap3D
-                      ? 'bg-green-700 text-white'
-                      : 'text-gray-700 hover:text-gray-900'
+                      ? 'bg-[#0066ff] text-white'
+                      : 'text-gray-400 hover:text-gray-300'
                   }`}
                 >
                   3D
@@ -553,7 +553,7 @@ export default function GovernmentVerification() {
             </div>
 
             {/* Map Display */}
-            <div className="flex-1 overflow-hidden bg-gray-50">
+            <div className="flex-1 overflow-hidden bg-[#0f0f0f]">
               {showMap3D ? (
                 <Government3DVisualization selectedCase={selectedCase} mapView={mapView} />
               ) : (
@@ -566,30 +566,30 @@ export default function GovernmentVerification() {
             </div>
 
             {/* Map Legend */}
-            <div className="border-t border-gray-200 bg-gray-50 px-4 py-2.5 text-xs">
+            <div className="border-t border-[#2a2a2a] bg-[#2a2a2a] px-4 py-2.5 text-xs">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-green-700"></div>
-                  <span className="text-gray-700 font-semibold">Government Record</span>
+                  <div className="w-3 h-3 rounded-sm bg-[#0066ff]"></div>
+                  <span className="text-gray-300 font-semibold">Government Record</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-blue-500" style={{borderStyle: 'dashed'}}></div>
-                  <span className="text-gray-700 font-semibold">Observed Boundary</span>
+                  <div className="w-3 h-3 rounded-sm bg-[#00d4ff]" style={{borderStyle: 'dashed'}}></div>
+                  <span className="text-gray-300 font-semibold">Observed Boundary</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-red-600"></div>
-                  <span className="text-gray-700 font-semibold">Conflict Area</span>
+                  <div className="w-3 h-3 rounded-sm bg-[#ff3333]"></div>
+                  <span className="text-gray-300 font-semibold">Conflict Area</span>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col bg-white border border-gray-200 rounded overflow-hidden">
+          <div className="flex-1 flex flex-col bg-[#1a1a1a] border border-[#2a2a2a] rounded overflow-hidden">
             {/* Empty Map Placeholder */}
-            <div className="flex-1 flex flex-col items-center justify-center bg-gray-50">
-              <MapPin className="w-16 h-16 text-gray-200 mb-4" />
+            <div className="flex-1 flex flex-col items-center justify-center bg-[#0f0f0f]">
+              <MapPin className="w-16 h-16 text-gray-700 mb-4" />
               <p className="text-sm font-semibold text-gray-500 mb-1">No Land Map Uploaded</p>
-              <p className="text-xs text-gray-400 text-center max-w-xs">
+              <p className="text-xs text-gray-600 text-center max-w-xs">
                 Upload a scanned, hand-drawn or cadastral map to begin spatial verification.
               </p>
             </div>
@@ -597,12 +597,12 @@ export default function GovernmentVerification() {
         )}
 
         {/* RIGHT PANEL: Details & Analysis */}
-        <div className="w-80 flex flex-col bg-white border border-gray-200 rounded overflow-y-auto flex-shrink-0">
+        <div className="w-80 flex flex-col bg-[#1a1a1a] border border-[#2a2a2a] rounded overflow-y-auto flex-shrink-0">
           {/* Parcel Details */}
-          <div className="border-b border-gray-200 px-4 py-2.5 bg-gray-50 flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 text-sm">PARCEL DETAILS</h3>
+          <div className="border-b border-[#2a2a2a] px-4 py-2.5 bg-[#2a2a2a] flex items-center justify-between">
+            <h3 className="font-bold text-gray-100 text-sm">PARCEL DETAILS</h3>
             {selectedCase?.isCitizenCase && (
-              <Badge className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-0.5">
+              <Badge className="bg-[#ffcc00] bg-opacity-20 text-[#ffcc00] text-[10px] font-bold px-2 py-0.5">
                 CITIZEN CASE
               </Badge>
             )}
@@ -611,9 +611,9 @@ export default function GovernmentVerification() {
           <div className="flex-1 overflow-y-auto">
             <div className="px-4 py-3 space-y-3">
               {/* Parcel / Case ID */}
-              <div className="border-b border-gray-100 pb-3">
-                <p className="text-xs text-gray-600 font-semibold mb-1">{selectedCase?.isCitizenCase ? 'CASE ID (Citizen)' : 'Parcel ID'}</p>
-                <p className="text-sm font-bold text-gray-900">{selectedCase?.isCitizenCase ? selectedCase?.caseId : selectedCase?.parcel_id}</p>
+              <div className="border-b border-[#2a2a2a] pb-3">
+                <p className="text-xs text-gray-400 font-semibold mb-1">{selectedCase?.isCitizenCase ? 'CASE ID (Citizen)' : 'Parcel ID'}</p>
+                <p className="text-sm font-bold text-[#00d4ff]">{selectedCase?.isCitizenCase ? selectedCase?.caseId : selectedCase?.parcel_id}</p>
                 {selectedCase?.isCitizenCase && selectedCase?.parcel_id && (
                   <p className="text-xs text-gray-500 mt-1">Parcel: {selectedCase.parcel_id}</p>
                 )}
@@ -623,28 +623,28 @@ export default function GovernmentVerification() {
               {selectedCase?.isCitizenCase && selectedCase?.citizenCase && (
                 <>
                   {/* Citizen Parcel Reference */}
-                  <div className="border-b border-gray-100 pb-3">
-                    <p className="text-xs text-gray-600 font-semibold mb-1">Referenced Parcel ID</p>
-                    <p className="text-sm font-bold text-gray-900">{selectedCase.citizenCase.parcelId}</p>
+                  <div className="border-b border-[#2a2a2a] pb-3">
+                    <p className="text-xs text-gray-400 font-semibold mb-1">Referenced Parcel ID</p>
+                    <p className="text-sm font-bold text-[#00d4ff]">{selectedCase.citizenCase.parcelId}</p>
                   </div>
 
                   {/* Citizen Reason / Evidence */}
-                  <div className="border-b border-gray-100 pb-3">
-                    <p className="text-xs text-gray-600 font-semibold mb-1">Citizen Report</p>
-                    <p className="text-xs text-gray-700">{selectedCase.citizenCase.reason}</p>
+                  <div className="border-b border-[#2a2a2a] pb-3">
+                    <p className="text-xs text-gray-400 font-semibold mb-1">Citizen Report</p>
+                    <p className="text-xs text-gray-300">{selectedCase.citizenCase.reason}</p>
                   </div>
 
                   {/* Confidence Score */}
-                  <div className="border-b border-gray-100 pb-3">
-                    <p className="text-xs text-gray-600 font-semibold mb-1">Spatial Verification Confidence</p>
+                  <div className="border-b border-[#2a2a2a] pb-3">
+                    <p className="text-xs text-gray-400 font-semibold mb-1">Spatial Verification Confidence</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-blue-700">{selectedCase.citizenCase.spatialConfidence}%</span>
+                      <span className="text-lg font-bold text-[#0066ff]">{selectedCase.citizenCase.spatialConfidence}%</span>
                       <span className={`text-xs font-bold px-2 py-0.5 rounded ${
                         selectedCase.citizenCase.confidenceLevel === 'HIGH'
-                          ? 'bg-red-100 text-red-700'
+                          ? 'bg-[#ff3333] bg-opacity-20 text-[#ff3333]'
                           : selectedCase.citizenCase.confidenceLevel === 'MEDIUM'
-                          ? 'bg-orange-100 text-orange-700'
-                          : 'bg-green-100 text-green-700'
+                          ? 'bg-[#ffcc00] bg-opacity-20 text-[#ffcc00]'
+                          : 'bg-[#00ff66] bg-opacity-20 text-[#00ff66]'
                       }`}>
                         {selectedCase.citizenCase.confidenceLevel}
                       </span>
@@ -652,28 +652,28 @@ export default function GovernmentVerification() {
                   </div>
 
                   {/* Affected Area */}
-                  <div className="border-b border-gray-100 pb-3">
-                    <p className="text-xs text-gray-600 font-semibold mb-1">Affected Area</p>
+                  <div className="border-b border-[#2a2a2a] pb-3">
+                    <p className="text-xs text-gray-400 font-semibold mb-1">Affected Area</p>
                     <div className="flex items-baseline gap-2">
-                      <p className="text-lg font-bold text-red-600">{selectedCase.citizenCase.affectedAreaM2}</p>
-                      <p className="text-xs text-gray-600">m²</p>
+                      <p className="text-lg font-bold text-[#ff3333]">{selectedCase.citizenCase.affectedAreaM2}</p>
+                      <p className="text-xs text-gray-400">m²</p>
                     </div>
                   </div>
 
                   {/* Outside Percentage */}
-                  <div className="border-b border-gray-100 pb-3">
-                    <p className="text-xs text-gray-600 font-semibold mb-1">Outside Percentage</p>
-                    <p className="text-sm font-bold text-red-600">{selectedCase.citizenCase.outsidePercentage.toFixed(2)}%</p>
+                  <div className="border-b border-[#2a2a2a] pb-3">
+                    <p className="text-xs text-gray-400 font-semibold mb-1">Outside Percentage</p>
+                    <p className="text-sm font-bold text-[#ff3333]">{selectedCase.citizenCase.outsidePercentage.toFixed(2)}%</p>
                   </div>
 
                   {/* Confidence Factors */}
                   {selectedCase.citizenCase.confidenceFactors && selectedCase.citizenCase.confidenceFactors.length > 0 && (
-                    <div className="border-b border-gray-100 pb-3">
-                      <p className="text-xs text-gray-600 font-semibold mb-1.5">Confidence Factors</p>
-                      <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-800 space-y-0.5">
+                    <div className="border-b border-[#2a2a2a] pb-3">
+                      <p className="text-xs text-gray-400 font-semibold mb-1.5">Confidence Factors</p>
+                      <div className="bg-[#2a2a2a] border border-accent-blue border-opacity-30 rounded p-2 text-xs text-[#0066ff] space-y-0.5">
                         {selectedCase.citizenCase.confidenceFactors.map((factor, i) => (
                           <div key={i} className="flex items-start gap-1.5">
-                            <span className="text-blue-600 font-bold mt-0.5">•</span>
+                            <span className="text-[#0066ff] font-bold mt-0.5">•</span>
                             <span>{factor}</span>
                           </div>
                         ))}
@@ -682,14 +682,14 @@ export default function GovernmentVerification() {
                   )}
 
                   {/* Citizen Case Status */}
-                  <div className="border-b border-gray-100 pb-3">
-                    <p className="text-xs text-gray-600 font-semibold mb-1">Case Status</p>
+                  <div className="border-b border-[#2a2a2a] pb-3">
+                    <p className="text-xs text-gray-400 font-semibold mb-1">Case Status</p>
                     <span className={`inline-block px-2 py-1 rounded text-xs font-bold ${
                       selectedCase.citizenCase.status === 'FLAGGED'
-                        ? 'bg-orange-100 text-orange-700'
+                        ? 'bg-[#ffcc00] bg-opacity-20 text-[#ffcc00]'
                         : selectedCase.citizenCase.status === 'VERIFIED'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-blue-100 text-blue-700'
+                        ? 'bg-[#00ff66] bg-opacity-20 text-[#00ff66]'
+                        : 'bg-[#0066ff] bg-opacity-20 text-[#0066ff]'
                     }`}>
                       {selectedCase.citizenCase.status}
                     </span>

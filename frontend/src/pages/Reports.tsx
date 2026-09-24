@@ -100,46 +100,46 @@ startxref
     <div className="p-8 max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
-          <p className="text-gray-500 mt-1 text-sm">View and download all generated audit reports.</p>
+          <h1 className="text-2xl font-bold text-white">Reports</h1>
+          <p className="text-gray-400 mt-1 text-sm">View and download all generated audit reports.</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-200">
+      <div className="bg-[#1a1a1a] rounded-xl border border-[#2a2a2a] shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-[#2a2a2a]">
           <div className="relative max-w-md">
             <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
-            <input type="text" placeholder="Search reports..." className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-green-500" />
+            <input type="text" placeholder="Search reports..." className="w-full pl-9 pr-4 py-2 border border-[#2a2a2a] rounded-lg text-sm bg-[#0f0f0f] text-white focus:ring-1 focus:ring-[#0066ff]" />
           </div>
         </div>
 
         <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50 text-gray-500 border-b border-gray-200">
+          <thead className="bg-[#2a2a2a] text-gray-300 border-b border-[#2a2a2a]">
             <tr>
-              <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Report ID</th>
-              <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Audit ID</th>
-              <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Parcel</th>
-              <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Status</th>
-              <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider">Generated On</th>
-              <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-center">Actions</th>
+              <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-white">Report ID</th>
+              <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-white">Audit ID</th>
+              <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-white">Parcel</th>
+              <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-white">Status</th>
+              <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-white">Generated On</th>
+              <th className="px-6 py-4 font-bold text-xs uppercase tracking-wider text-center text-white">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-[#2a2a2a]">
             {reports.map((r, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-bold text-gray-900">{r.id}</td>
-                <td className="px-6 py-4 text-gray-600">{r.auditId}</td>
-                <td className="px-6 py-4 text-gray-800 font-medium">{r.parcel}</td>
+              <tr key={i} className="hover:bg-[#2a2a2a]">
+                <td className="px-6 py-4 font-bold text-white">{r.id}</td>
+                <td className="px-6 py-4 text-gray-300">{r.auditId}</td>
+                <td className="px-6 py-4 text-gray-200 font-medium">{r.parcel}</td>
                 <td className="px-6 py-4">
                   <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${r.statusBg}`}>
                     {r.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-gray-500 text-xs">{r.date}</td>
+                <td className="px-6 py-4 text-gray-400 text-xs">{r.date}</td>
                 <td className="px-6 py-4 text-center">
                   <button 
                     onClick={() => handleDownloadReport(r.id, r.parcel)}
-                    className="p-2 text-gray-500 hover:text-green-600 rounded-lg hover:bg-green-50 transition-colors" 
+                    className="p-2 text-gray-400 hover:text-[#00ff66] rounded-lg hover:bg-[#2a2a2a] transition-colors" 
                     title="Download Report"
                   >
                     <Download className="w-4 h-4" />
@@ -150,14 +150,14 @@ startxref
           </tbody>
         </table>
 
-        <div className="p-4 border-t border-gray-200 flex justify-between items-center text-xs text-gray-500">
+        <div className="p-4 border-t border-[#2a2a2a] flex justify-between items-center text-xs text-gray-400">
           <span>Showing 1 to 6 of 18 reports</span>
           <div className="flex gap-1">
-            <button className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50">&lt;</button>
-            <button className="w-7 h-7 flex items-center justify-center rounded bg-green-600 text-white font-bold">1</button>
-            <button className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50">2</button>
-            <button className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50">3</button>
-            <button className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50">&gt;</button>
+            <button className="w-7 h-7 flex items-center justify-center rounded border border-[#2a2a2a] hover:bg-[#2a2a2a] text-white">&lt;</button>
+            <button className="w-7 h-7 flex items-center justify-center rounded bg-[#0066ff] text-white font-bold">1</button>
+            <button className="w-7 h-7 flex items-center justify-center rounded border border-[#2a2a2a] hover:bg-[#2a2a2a] text-white">2</button>
+            <button className="w-7 h-7 flex items-center justify-center rounded border border-[#2a2a2a] hover:bg-[#2a2a2a] text-white">3</button>
+            <button className="w-7 h-7 flex items-center justify-center rounded border border-[#2a2a2a] hover:bg-[#2a2a2a] text-white">&gt;</button>
           </div>
         </div>
       </div>
