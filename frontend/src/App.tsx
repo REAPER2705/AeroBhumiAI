@@ -7,12 +7,14 @@ import {
   FileCheck, 
   FileText, 
   User, 
-  Layers 
+  Layers,
+  Search
 } from 'lucide-react';
 import Dashboard from './pages/Dashboard';
 import Parcels from './pages/Parcels';
 import NewAudit from './pages/NewAudit';
 import Reports from './pages/Reports';
+import CaseTracking from './pages/CaseTracking';
 import GovernmentVerification from './pages/GovernmentVerification';
 
 export default function App() {
@@ -44,6 +46,8 @@ export default function App() {
         return <NewAudit key={activeTab} setActiveTab={handleTabChange} initialStep={initialAuditStep} />;
       case 'Reports':
         return <Reports />;
+      case 'Track Case':
+        return <CaseTracking />;
       default:
         return <Dashboard setActiveTab={handleTabChange} />;
     }
@@ -94,7 +98,8 @@ export default function App() {
                 { name: 'Drone Upload', icon: UploadCloud },
                 { name: 'Audit Map', icon: MapIcon },
                 { name: 'My Audits', icon: FileCheck },
-                { name: 'Reports', icon: FileText }
+                { name: 'Reports', icon: FileText },
+                { name: 'Track Case', icon: Search }
               ].map((item) => (
                 <button
                   key={item.name}

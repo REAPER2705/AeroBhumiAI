@@ -5,6 +5,8 @@
  * and assets for automated land-record verification system prototype.
  */
 
+import * as caseServiceModule from '../services/caseService';
+
 export interface GovernmentCase {
   parcel_id: string;
   registered_area_m2: number;
@@ -24,54 +26,57 @@ export interface GovernmentCase {
 
 const createCadastralMap = (): string => {
   const svg = `<svg width="600" height="700" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 700">
-    <rect width="600" height="700" fill="#fdf8f0"/>
-    <rect x="15" y="15" width="570" height="670" fill="none" stroke="#333333" stroke-width="2"/>
-    <rect x="18" y="18" width="564" height="664" fill="none" stroke="#666666" stroke-width="0.5"/>
-    <text x="300" y="45" font-size="20" font-weight="bold" fill="#1a1a1a" text-anchor="middle">CADASTRAL SURVEY MAP</text>
-    <text x="300" y="68" font-size="11" fill="#333333" text-anchor="middle">Official Land Record Document</text>
-    <line x1="40" y1="75" x2="560" y2="75" stroke="#999999" stroke-width="1"/>
-    <text x="30" y="100" font-size="10" font-weight="bold" fill="#333333">Survey Number:</text>
-    <text x="180" y="100" font-size="10" fill="#555555">BTP-667-2024</text>
-    <text x="30" y="120" font-size="10" font-weight="bold" fill="#333333">Taluk/Block:</text>
-    <text x="180" y="120" font-size="10" fill="#555555">Nagpur District</text>
-    <text x="30" y="140" font-size="10" font-weight="bold" fill="#333333">Survey Date:</text>
-    <text x="180" y="140" font-size="10" fill="#555555">15-NOV-2024</text>
-    <text x="350" y="100" font-size="10" font-weight="bold" fill="#333333">Reference:</text>
-    <text x="470" y="100" font-size="10" fill="#555555">B4P-667</text>
-    <text x="350" y="120" font-size="10" font-weight="bold" fill="#333333">Scale:</text>
-    <text x="470" y="120" font-size="10" fill="#555555">1:1000 M</text>
+    <!-- Satellite background - green terrain -->
     <defs>
-      <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e8e0d0" stroke-width="0.4"/>
-      </pattern>
+      <radialGradient id="satellite" cx="40%" cy="40%">
+        <stop offset="0%" style="stop-color:#3a6b2f;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#1a3a1a;stop-opacity:1" />
+      </radialGradient>
     </defs>
-    <rect x="40" y="160" width="520" height="430" fill="url(#grid)"/>
-    <polyline points="100,200 450,200 450,500 100,500 100,200" fill="none" stroke="#1a5f1a" stroke-width="3" stroke-linejoin="round"/>
-    <circle cx="100" cy="200" r="3" fill="#1a5f1a"/>
-    <circle cx="450" cy="200" r="3" fill="#1a5f1a"/>
-    <circle cx="450" cy="500" r="3" fill="#1a5f1a"/>
-    <circle cx="100" cy="500" r="3" fill="#1a5f1a"/>
-    <line x1="100" y1="340" x2="450" y2="340" stroke="#999999" stroke-width="1" stroke-dasharray="3,3"/>
-    <line x1="275" y1="200" x2="275" y2="500" stroke="#999999" stroke-width="1" stroke-dasharray="3,3"/>
-    <text x="188" y="270" font-size="28" font-weight="bold" fill="#2a2a2a" text-anchor="middle">P-003</text>
-    <text x="362" y="270" font-size="24" font-weight="bold" fill="#2a2a2a" text-anchor="middle">P-025</text>
-    <text x="188" y="420" font-size="24" font-weight="bold" fill="#2a2a2a" text-anchor="middle">P-047</text>
-    <text x="362" y="420" font-size="24" font-weight="bold" fill="#2a2a2a" text-anchor="middle">P-048</text>
-    <line x1="40" y1="610" x2="560" y2="610" stroke="#999999" stroke-width="1"/>
-    <text x="30" y="635" font-size="9" font-weight="bold" fill="#333333">LEGEND:</text>
-    <line x1="30" y1="640" x2="50" y2="640" stroke="#1a5f1a" stroke-width="3"/>
-    <text x="60" y="645" font-size="8" fill="#333333">= Registered Boundary</text>
-    <text x="30" y="665" font-size="8" fill="#666666">Official Government Record (c) Maharashtra Revenue Department 2024</text>
-    <text x="30" y="680" font-size="7" fill="#999999">Not to be reproduced without written permission • Coordinates in WGS84</text>
-    <text x="300" y="400" font-size="60" fill="#f0f0f0" opacity="0.15" text-anchor="middle" font-weight="bold" font-style="italic">VERIFIED</text>
+    
+    <rect width="600" height="700" fill="url(#satellite)"/>
+    
+    <!-- Add some texture variation for satellite effect -->
+    <circle cx="150" cy="200" r="100" fill="#2d5016" opacity="0.6"/>
+    <circle cx="450" cy="300" r="120" fill="#4a8a3f" opacity="0.5"/>
+    <circle cx="300" cy="500" r="80" fill="#2a4a1f" opacity="0.7"/>
+    
+    <!-- Road/path -->
+    <line x1="0" y1="100" x2="600" y2="150" stroke="#666666" stroke-width="15" opacity="0.8"/>
+    
+    <!-- Parcel boundary - GREEN DASHED (legal boundary) -->
+    <rect x="100" y="150" width="400" height="450" fill="none" stroke="#00ff00" stroke-width="4" stroke-dasharray="15,10" opacity="0.9"/>
+    
+    <!-- Boundary corner markers -->
+    <circle cx="100" cy="150" r="5" fill="#00ff00" opacity="0.9"/>
+    <circle cx="500" cy="150" r="5" fill="#00ff00" opacity="0.9"/>
+    <circle cx="500" cy="600" r="5" fill="#00ff00" opacity="0.9"/>
+    <circle cx="100" cy="600" r="5" fill="#00ff00" opacity="0.9"/>
+    
+    <!-- Conflict/Building area - RED SOLID (encroachment) -->
+    <polygon points="420,150 500,200 480,320 420,280" fill="#ff3333" opacity="0.5"/>
+    <polygon points="420,150 500,200 480,320 420,280" fill="none" stroke="#ff0000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Blue reference line between parcel and conflict -->
+    <line x1="420" y1="150" x2="300" y2="100" stroke="#0099ff" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+    
+    <!-- Labels -->
+    <text x="110" y="130" font-size="14" font-weight="bold" fill="#00ff00" text-anchor="start">LEGAL BOUNDARY</text>
+    <text x="430" y="120" font-size="14" font-weight="bold" fill="#ff3333" text-anchor="start">ENCROACHMENT</text>
+    
+    <!-- Legend at bottom -->
+    <rect x="10" y="650" width="580" height="40" fill="#000000" opacity="0.6" rx="3"/>
+    <line x1="20" y1="670" x2="50" y2="670" stroke="#00ff00" stroke-width="3" stroke-dasharray="5,4"/>
+    <text x="60" y="675" font-size="12" fill="#ffffff">Green Dashed = Legal Parcel Boundary</text>
+    
+    <line x1="320" y1="670" x2="350" y2="670" stroke="#ff0000" stroke-width="3"/>
+    <text x="360" y="675" font-size="12" fill="#ffffff">Red = Conflict/Encroachment Area</text>
   </svg>`;
   
-  // UTF-8 safe Base64 encoding to handle Unicode characters like © and •
-  const encoded = btoa(unescape(encodeURIComponent(svg)));
-  return `data:image/svg+xml;base64,${encoded}`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
 };
 
-export const DEMO_MAP_IMAGE = createCadastralMap();
+export const DEMO_MAP_IMAGE = '';
 
 // ============================================================================
 // GENERATE REALISTIC CADASTRAL PARCEL GRID (20+ parcels)
@@ -262,4 +267,72 @@ export function get3DVisualizationData(parcelId: string): {
  */
 export function getCadastralParcels() {
   return DEMO_GEOMETRY.cadastralParcels;
+}
+
+/**
+ * Convert CitizenCase to GovernmentCase format for government dashboard
+ * This allows citizen-flagged cases to appear alongside mock government cases
+ */
+export function convertCitizenCaseToGovernmentCase(citizenCase: any): GovernmentCase & { caseId?: string } {
+  return {
+    parcel_id: citizenCase.parcelId, // Use original parcel ID
+    caseId: citizenCase.caseId, // Store the actual case ID for matching
+    registered_area_m2: 0, // Not available from citizen case
+    observed_area_m2: 0, // Not available from citizen case
+    area_variance_percent: 0, // Not available from citizen case
+    affected_area_m2: citizenCase.affectedAreaM2,
+    affected_side: 'Unknown', // Not available from citizen case
+    conflict_type: citizenCase.conflictResult,
+    priority: citizenCase.confidenceLevel === 'HIGH' ? 'HIGH' : citizenCase.confidenceLevel === 'MEDIUM' ? 'MEDIUM' : 'LOW',
+    status: citizenCase.status,
+    description: `Citizen-flagged case: ${citizenCase.reason}. Confidence: ${citizenCase.spatialConfidence}% (${citizenCase.confidenceLevel})`
+  };
+}
+
+/**
+ * Get merged list of mock government cases + citizen-created cases
+ */
+export function getAllGovernmentCases(): (GovernmentCase & { isCitizenCase?: boolean; citizenCase?: any })[] {
+  console.log('=== getAllGovernmentCases called ===');
+  
+  // Start with empty array - NO mock cases
+  const allCases: (GovernmentCase & { isCitizenCase?: boolean; citizenCase?: any })[] = [];
+  console.log('  Mock cases: 0 (disabled - only show citizen cases)');
+  
+  // Try to load citizen cases from localStorage
+  try {
+    console.log('  Loading citizen cases...');
+    const citizenCases = caseServiceModule.exportCasesForGovernment() || [];
+    console.log('  ✅ Citizen cases found:', citizenCases.length);
+    if (citizenCases.length > 0) {
+      console.log('    Citizen cases data:', JSON.stringify(citizenCases, null, 2));
+    }
+    
+    // Convert and add citizen cases
+    const convertedCases = citizenCases.map((cc: any) => {
+      console.log('    Converting citizen case:', cc.caseId);
+      const govCase = convertCitizenCaseToGovernmentCase(cc);
+      console.log('    Converted to:', JSON.stringify(govCase));
+      return {
+        ...govCase,
+        isCitizenCase: true,
+        citizenCase: cc
+      };
+    });
+    
+    const total = allCases.length + convertedCases.length;
+    console.log('✅ Total cases to return:', total);
+    const result = [...allCases, ...convertedCases];
+    console.log('  Result array length:', result.length);
+    return result;
+  } catch (err) {
+    console.error('❌ Error loading citizen cases:', err);
+    if (err instanceof Error) {
+      console.error('    Message:', err.message);
+      console.error('    Stack:', err.stack);
+    }
+    // If caseService not available, just return empty array
+    console.log('  Returning empty array');
+    return allCases;
+  }
 }

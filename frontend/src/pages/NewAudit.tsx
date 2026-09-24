@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UploadCloud, CheckCircle, FileText, Download } from 'lucide-react';
 import { apiClient } from '../services/api';
+import * as caseService from '../services/caseService';
 import MapWorkspace from '../components/map/MapWorkspace';
 import { Parcel, BuildCheckResult } from '../utils/types';
 
@@ -10,7 +11,7 @@ interface NewAuditProps {
 }
 
 export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAuditProps) {
-  const [step, setStep] = useState<'select' | 'upload' | 'draw' | 'spatial' | 'analyze' | 'ai_explain' | 'generate_report'>(
+  const [step, setStep] = useState<'select' | 'upload' | 'draw' | 'spatial' | 'analyze' | 'ai_explain' | 'report_and_flag' | 'generate_report'>(
     initialStep === 'draw' ? 'draw' : initialStep === 'analyze' ? 'analyze' : 'select'
   );
 
@@ -29,6 +30,12 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
   
   const [auditResult, setAuditResult] = useState<any>(null);
   const [auditId, setAuditId] = useState<string>('');
+  
+  // Case flagging state
+  const [evidenceSnapshot, setEvidenceSnapshot] = useState<{dataUrl: string; fileName: string} | null>(null);
+  const [flaggedCaseId, setFlaggedCaseId] = useState<string | null>(null);
+  const [flagging, setFlagging] = useState(false);
+  const [mapSnapshot, setMapSnapshot] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,19 +59,44 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
     fetchParcels();
   }, []);
 
+  // Preserve buildCheckResult in sessionStorage whenever it changes
+  useEffect(() => {
+    console.log('📝 buildCheckResult useEffect fired, value:', buildCheckResult ? 'EXISTS' : 'NULL');
+    if (buildCheckResult) {
+      console.log('📝 Effect: Saving buildCheckResult to sessionStorage');
+      sessionStorage.setItem('currentBuildCheckResult', JSON.stringify(buildCheckResult));
+    }
+  }, [buildCheckResult]);
+
+  // Preserve selectedParcelId in sessionStorage for resilience
+  useEffect(() => {
+    if (selectedParcelId) {
+      console.log('📝 Effect: Saving selectedParcelId to sessionStorage');
+      sessionStorage.setItem('currentSelectedParcelId', selectedParcelId);
+    }
+  }, [selectedParcelId]);
+
   // Fetch selected parcel details when selectedParcelId changes
   useEffect(() => {
     if (!selectedParcelId) return;
+    
+    console.log('📝 Parcel effect triggered for:', selectedParcelId);
     
     const fetchParcelDetails = async () => {
       try {
         const res = await apiClient.getParcel(selectedParcelId);
         if (res.data) {
           setSelectedParcel(res.data);
-          // Clear stale data when parcel changes
-          setHouseGeometry(null);
-          setBuildCheckResult(null);
-          setAuditResult(null);
+          // Only clear buildCheckResult if we're on draw or spatial step
+          // Don't clear it if we've already done the analysis and are moving to report
+          if (step === 'draw' || step === 'select') {
+            console.log('📝 Clearing buildCheckResult due to parcel change (step=' + step + ')');
+            setHouseGeometry(null);
+            setBuildCheckResult(null);
+            setAuditResult(null);
+          } else {
+            console.log('📝 NOT clearing buildCheckResult (step=' + step + ') - preserving analysis');
+          }
         }
       } catch (err) {
         console.error('Failed to fetch parcel details:', err);
@@ -72,7 +104,7 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
       }
     };
     fetchParcelDetails();
-  }, [selectedParcelId]);
+  }, [selectedParcelId, step]);
 
   const handleRunBuildCheck = async () => {
     setLoading(true);
@@ -80,7 +112,11 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
     try {
       if (selectedParcelId && houseGeometry) {
         const res = await apiClient.buildCheck(selectedParcelId, houseGeometry);
+        console.log('✅ buildCheckResult received:', res.data);
         setBuildCheckResult(res.data);
+        // Store in sessionStorage as backup
+        sessionStorage.setItem('currentBuildCheckResult', JSON.stringify(res.data));
+        console.log('✅ buildCheckResult stored in sessionStorage');
       }
       setStep('spatial');
     } catch (err) {
@@ -134,6 +170,143 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEvidenceUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setEvidenceSnapshot({
+        dataUrl,
+        fileName: file.name
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFlagForVerification = async () => {
+    console.log('=== handleFlagForVerification called ===');
+    
+    // Restore critical data from sessionStorage - DO THIS IMMEDIATELY
+    let actualSelectedParcelId = selectedParcelId;
+    let actualBuildCheckResult = buildCheckResult;
+    
+    console.log('Initial state check:');
+    console.log('  selectedParcelId:', selectedParcelId ? 'YES: ' + selectedParcelId : 'EMPTY');
+    console.log('  buildCheckResult:', buildCheckResult ? 'YES - has data' : 'NULL');
+    
+    // Try to restore buildCheckResult from sessionStorage if lost
+    if (!actualBuildCheckResult) {
+      console.log('⚠️  buildCheckResult is null, trying to restore from sessionStorage');
+      const stored = sessionStorage.getItem('currentBuildCheckResult');
+      console.log('  sessionStorage.currentBuildCheckResult:', stored ? 'FOUND (' + stored.length + ' chars)' : 'NOT FOUND');
+      if (stored) {
+        try {
+          actualBuildCheckResult = JSON.parse(stored);
+          console.log('✅ Restored buildCheckResult from sessionStorage');
+          console.log('  Result:', actualBuildCheckResult.result);
+          console.log('  Metrics:', actualBuildCheckResult.metrics);
+        } catch (e) {
+          console.error('❌ Could not parse stored buildCheckResult:', e);
+        }
+      }
+    }
+    
+    // Try to restore selectedParcelId from sessionStorage if lost
+    if (!actualSelectedParcelId) {
+      console.log('⚠️  selectedParcelId is empty, trying to restore from sessionStorage');
+      const stored = sessionStorage.getItem('currentSelectedParcelId');
+      if (stored) {
+        actualSelectedParcelId = stored;
+        console.log('✅ Restored selectedParcelId from sessionStorage:', actualSelectedParcelId);
+      }
+    }
+    
+    // Validate we have all required data
+    if (!actualSelectedParcelId) {
+      const errMsg = 'Missing parcel ID - please select a parcel first';
+      console.error('❌', errMsg);
+      setError(errMsg);
+      setFlagging(false);
+      return;
+    }
+    
+    if (!actualBuildCheckResult) {
+      const errMsg = 'Missing spatial analysis data - please run compliance check first';
+      console.error('❌', errMsg);
+      console.error('  buildCheckResult:', actualBuildCheckResult);
+      setError(errMsg);
+      setFlagging(false);
+      return;
+    }
+
+    console.log('✅ Data validation passed - all required data present');
+    console.log('  ParcelId:', actualSelectedParcelId);
+    console.log('  BuildCheckResult result:', actualBuildCheckResult.result);
+    console.log('  Metrics available:', !!actualBuildCheckResult.metrics);
+    
+    setFlagging(true);
+    console.log('✅ flagging state set to true');
+    
+    try {
+      console.log('📝 Creating case with parameters:');
+      console.log('  parcelId:', actualSelectedParcelId);
+      console.log('  auditId:', auditId || 'AUD-DRAFT');
+      console.log('  conflictResult:', auditResult?.result || actualBuildCheckResult.result);
+      console.log('  affectedAreaM2:', actualBuildCheckResult.metrics.outside_area_m2);
+      console.log('  outsidePercentage:', actualBuildCheckResult.metrics.outside_percentage);
+      console.log('  reason:', auditResult?.problem || 'Boundary conflict');
+      
+      const newCase = caseService.createCase({
+        parcelId: actualSelectedParcelId,
+        auditId: auditId || 'AUD-DRAFT',
+        conflictResult: auditResult?.result || actualBuildCheckResult.result,
+        affectedAreaM2: actualBuildCheckResult.metrics.outside_area_m2,
+        outsidePercentage: actualBuildCheckResult.metrics.outside_percentage,
+        reason: auditResult?.problem || 'Potential boundary conflict detected during spatial analysis',
+        evidenceDataUrl: evidenceSnapshot?.dataUrl || mapSnapshot,
+        evidenceFileName: evidenceSnapshot?.fileName || 'evidence.png'
+      });
+
+      console.log('✅ Case created successfully!');
+      console.log('  Case ID:', newCase.caseId);
+      console.log('  Status:', newCase.status);
+      console.log('  ParcelId:', newCase.parcelId);
+      
+      // Update state to show confirmation
+      setFlaggedCaseId(newCase.caseId);
+      setError(null);
+      
+      console.log('✅ State updated - confirmation screen should appear');
+      console.log('CASE CREATION COMPLETE');
+    } catch (err) {
+      console.error('❌ Error creating case:', err);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      setError('Failed to flag case: ' + errorMsg);
+    } finally {
+      console.log('✅ Cleanup: Setting flagging to false');
+      setFlagging(false);
+    }
+  };
+
+  const handleGenerateReportAndFlag = () => {
+    // Try to capture map if not already done
+    if (!mapSnapshot && !evidenceSnapshot) {
+      const mapContainer = document.querySelector('[data-test="map-workspace"]');
+      if (mapContainer && (mapContainer as any).querySelector('canvas')) {
+        try {
+          const canvas = (mapContainer as any).querySelector('canvas');
+          setMapSnapshot(canvas.toDataURL('image/png'));
+        } catch (e) {
+          console.log('Could not capture map canvas, using upload fallback');
+        }
+      }
+    }
+    // Move to report_and_flag step
+    setStep('report_and_flag');
   };
 
   // SCREEN 3: Upload Drone Image / GeoTIFF
@@ -342,9 +515,20 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
 
             <div className="flex justify-between mt-6">
               <button onClick={() => setStep('draw')} className="px-4 py-2 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50">Back</button>
-              <button onClick={handleRunAudit} className="px-4 py-2 bg-green-600 rounded-lg text-xs font-bold text-white hover:bg-green-700 disabled:opacity-50" disabled={!buildCheckResult}>
-                Continue to Audit Analysis
-              </button>
+              <div className="flex gap-2">
+                {/* Show flag button if conflict detected */}
+                {buildCheckResult?.result !== 'CLEAR' && (
+                  <button 
+                    onClick={handleGenerateReportAndFlag}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg text-xs font-bold hover:bg-red-700"
+                  >
+                    Generate Report & Flag
+                  </button>
+                )}
+                <button onClick={handleRunAudit} className="px-4 py-2 bg-green-600 rounded-lg text-xs font-bold text-white hover:bg-green-700 disabled:opacity-50" disabled={!buildCheckResult}>
+                  Continue to Audit Analysis
+                </button>
+              </div>
             </div>
           </div>
 
@@ -507,6 +691,240 @@ export default function NewAudit({ setActiveTab, initialStep = 'select' }: NewAu
     );
   }
 
+  // Show case confirmation BEFORE report_and_flag so it takes priority
+  if (flaggedCaseId) {
+    return (
+      <div className="p-8 max-w-2xl mx-auto">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Case Successfully Flagged</h1>
+        
+        <div className="bg-green-50 border-2 border-green-300 rounded-xl p-8 text-center">
+          <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-green-900 mb-3">Government Case Created</h2>
+          
+          <div className="bg-white rounded-lg p-6 inline-block mb-6 text-left border border-gray-200">
+            <p className="text-sm mb-2"><span className="font-bold text-gray-600">Case ID:</span></p>
+            <p className="font-mono font-bold text-lg text-green-700 mb-4">{flaggedCaseId}</p>
+            
+            <p className="text-sm mb-2"><span className="font-bold text-gray-600">Parcel ID:</span> <span className="text-gray-900">{selectedParcelId}</span></p>
+            <p className="text-sm mb-2"><span className="font-bold text-gray-600">Status:</span> <span className="inline-block px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-bold">PENDING REVIEW</span></p>
+            <p className="text-sm"><span className="font-bold text-gray-600">Submitted:</span> <span className="text-gray-900">{new Date().toLocaleString()}</span></p>
+          </div>
+
+          <p className="text-gray-700 mb-6">
+            Your case has been submitted for official government verification. Use your Case ID to track the status.
+          </p>
+
+          <div className="flex gap-3 justify-center">
+            <button 
+              onClick={() => setActiveTab('Track Case')}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700"
+            >
+              Track This Case
+            </button>
+            <button 
+              onClick={() => {
+                setStep('select');
+                setFlaggedCaseId(null);
+                setEvidenceSnapshot(null);
+                setMapSnapshot(null);
+                setAuditResult(null);
+                setBuildCheckResult(null);
+                setHouseGeometry(null);
+              }}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700"
+            >
+              Start New Audit
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // SCREEN: Report & Flag for Verification (NEW - Between Spatial and Generate Report)
+  if (step === 'report_and_flag') {
+    console.log('=== report_and_flag screen rendered ===');
+    
+    // Immediately restore buildCheckResult from sessionStorage if it's null
+    let displayBuildCheckResult = buildCheckResult;
+    if (!displayBuildCheckResult) {
+      const stored = sessionStorage.getItem('currentBuildCheckResult');
+      if (stored) {
+        try {
+          displayBuildCheckResult = JSON.parse(stored);
+          console.log('📝 Restored buildCheckResult from sessionStorage on report screen');
+          // Also restore to state so submit button has it
+          setBuildCheckResult(displayBuildCheckResult);
+        } catch (e) {
+          console.error('❌ Could not parse buildCheckResult from sessionStorage');
+        }
+      }
+    }
+    
+    console.log('buildCheckResult:', displayBuildCheckResult);
+    console.log('selectedParcelId:', selectedParcelId);
+    console.log('auditResult:', auditResult);
+    
+    const metrics = displayBuildCheckResult?.metrics || {};
+    const confidence = caseService.calculateSpatialConfidence({
+      outsidePercentage: metrics.outside_percentage || 0,
+      affectedAreaM2: metrics.outside_area_m2 || 0,
+      hasEvidenceSnapshot: !!evidenceSnapshot || !!mapSnapshot,
+      auditResult: displayBuildCheckResult?.result || ''
+    });
+
+    return (
+      <div className="p-8 max-w-2xl mx-auto">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Flag for Official Verification</h1>
+        <p className="text-gray-500 mb-8 text-sm">Review the conflict evidence below and submit for government verification.</p>
+
+        {error && <div className="mb-4 p-4 bg-red-50 text-red-700 rounded-lg text-sm">{error}</div>}
+
+        {/* Conflict Summary Box */}
+        <div className="bg-red-50 border border-red-300 rounded-xl p-6 mb-8">
+          <h2 className="text-lg font-bold text-red-900 mb-4">Potential Boundary Conflict</h2>
+          
+          <div className="grid grid-cols-2 gap-6 mb-6">
+            <div>
+              <p className="text-xs font-semibold text-red-700 uppercase mb-1">Affected Area</p>
+              <p className="text-2xl font-bold text-red-700">{metrics.outside_area_m2?.toFixed(2)} m²</p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-red-700 uppercase mb-1">Outside Percentage</p>
+              <p className="text-2xl font-bold text-red-700">{metrics.outside_percentage?.toFixed(2)}%</p>
+            </div>
+          </div>
+
+          <div className="border-t border-red-200 pt-4">
+            <p className="text-xs font-semibold text-red-700 uppercase mb-1">Why Flagged</p>
+            <p className="text-sm text-red-800">{auditResult?.problem || 'Portion of the proposed building extends outside the recorded parcel boundary.'}</p>
+          </div>
+        </div>
+
+        {/* Spatial Verification Confidence */}
+        <div className="bg-blue-50 border border-blue-300 rounded-xl p-6 mb-8">
+          <h2 className="text-lg font-bold text-blue-900 mb-3">Spatial Verification Confidence</h2>
+          
+          <div className="flex items-center gap-4 mb-4">
+            <div>
+              <p className="text-sm font-semibold text-blue-700 mb-1">Confidence Score</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-blue-700">{confidence.score}</span>
+                <span className="text-sm text-blue-600">/ 100</span>
+              </div>
+            </div>
+            <div>
+              <span className={`inline-block px-3 py-1 rounded-lg font-bold text-sm ${
+                confidence.level === 'HIGH'
+                  ? 'bg-red-100 text-red-700'
+                  : confidence.level === 'MEDIUM'
+                  ? 'bg-orange-100 text-orange-700'
+                  : 'bg-green-100 text-green-700'
+              }`}>
+                {confidence.level} CONFIDENCE
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg p-3 border border-blue-200">
+            <p className="text-xs font-semibold text-gray-900 mb-2">Evidence Factors:</p>
+            {confidence.factors.map((factor, i) => (
+              <div key={i} className="flex items-start gap-2 text-xs text-gray-700 mb-1">
+                <span className="text-blue-600 font-bold">•</span>
+                <span>{factor}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Evidence Snapshot Section */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 mb-8 shadow-sm">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Conflict Evidence Snapshot</h2>
+
+          {/* Show Map Snapshot if Available */}
+          {(mapSnapshot || evidenceSnapshot) ? (
+            <div className="mb-4">
+              <div className="bg-gray-100 border border-gray-300 rounded-lg overflow-hidden max-h-64 flex items-center justify-center">
+                <img
+                  src={evidenceSnapshot?.dataUrl || mapSnapshot || ''}
+                  alt="Conflict Evidence"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <p className="text-xs text-gray-600 mt-2">
+                {evidenceSnapshot ? `Uploaded: ${evidenceSnapshot.fileName}` : 'Map Evidence Captured'}
+              </p>
+            </div>
+          ) : (
+            <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center mb-4">
+              <p className="text-sm text-gray-600">No snapshot uploaded. Please upload an evidence photo below.</p>
+            </div>
+          )}
+
+          {/* Upload Evidence */}
+          <div className="mb-4">
+            <label className="block text-xs font-semibold text-gray-700 mb-2">Upload Evidence Snapshot (Optional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleEvidenceUpload}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+            />
+            <p className="text-xs text-gray-500 mt-1">Recommended: Screenshot showing the conflict area with legend</p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            {mapSnapshot || evidenceSnapshot ? (
+              <button
+                onClick={() => {
+                  setMapSnapshot(null);
+                  setEvidenceSnapshot(null);
+                }}
+                className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold hover:bg-gray-200"
+              >
+                Replace Snapshot
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Final Submission Section */}
+        <div className="bg-green-50 border border-green-300 rounded-xl p-6 mb-8">
+          <p className="text-sm text-gray-700 mb-4">
+            When you submit this report, a Government Case ID will be generated. Government officers will receive:
+          </p>
+          <ul className="text-xs text-gray-700 space-y-1 pl-5 list-disc">
+            <li>This conflict analysis with measurements</li>
+            <li>The conflict map/evidence snapshot</li>
+            <li>Spatial verification confidence score</li>
+            <li>Your report details</li>
+          </ul>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-between">
+          <button 
+            onClick={() => { console.log('Back clicked'); setStep('spatial'); }} 
+            className="px-6 py-2 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50"
+          >
+            Back
+          </button>
+          <button
+            onClick={() => {
+              console.log('SUBMIT BUTTON CLICKED!');
+              handleFlagForVerification();
+            }}
+            disabled={flagging}
+            className="px-6 py-3 bg-green-700 text-white rounded-lg text-xs font-bold hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {flagging ? 'Submitting...' : 'Submit for Government Verification'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const handleDownloadPDF = (reportId: string = 'RPT-2025-018') => {
     const pdfContent = `%PDF-1.4
 1 0 obj
@@ -587,29 +1005,91 @@ startxref
   if (step === 'generate_report') {
     const reportMetrics = buildCheckResult?.metrics || {};
     const reportId = `RPT-${auditId?.replace('AUD-', '') || '2025-018'}`;
+    const confidence = caseService.calculateSpatialConfidence({
+      outsidePercentage: reportMetrics.outside_percentage || 0,
+      affectedAreaM2: reportMetrics.outside_area_m2 || 0,
+      hasEvidenceSnapshot: !!evidenceSnapshot,
+      auditResult: auditResult?.result || ''
+    });
+    
+    // If already flagged, show confirmation
+    if (flaggedCaseId) {
+      return (
+        <div className="p-8 max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">Case Flagged for Official Verification</h1>
+          <div className="bg-green-50 border-2 border-green-300 rounded-xl p-8 text-center">
+            <CheckCircle className="w-16 h-16 text-green-600 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-green-900 mb-2">Case Successfully Flagged</h2>
+            <p className="text-green-700 mb-6">Your case has been submitted for official government verification.</p>
+            <div className="bg-white rounded-lg p-6 inline-block mb-6 text-left">
+              <p className="text-sm text-gray-600 mb-2"><span className="font-bold">Case ID:</span> <span className="font-mono font-bold text-green-700">{flaggedCaseId}</span></p>
+              <p className="text-sm text-gray-600 mb-2"><span className="font-bold">Parcel ID:</span> {selectedParcelId}</p>
+              <p className="text-sm text-gray-600 mb-2"><span className="font-bold">Conflict:</span> {auditResult?.result}</p>
+              <p className="text-sm text-gray-600"><span className="font-bold">Confidence:</span> {confidence.score}% ({confidence.level})</p>
+            </div>
+            <p className="text-sm text-gray-600 mb-6">Government officers will review your submission and update the status. You can track your case using the Case ID.</p>
+            <button onClick={() => setActiveTab('Dashboard')} className="px-6 py-2 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700">Return to Dashboard</button>
+          </div>
+        </div>
+      );
+    }
     
     return (
-      <div className="p-8 max-w-5xl mx-auto">
+      <div className="p-8 max-w-6xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Generate Audit Report</h1>
-        <p className="text-gray-500 mb-6 text-sm">Review and generate the final audit report.</p>
+        <p className="text-gray-500 mb-6 text-sm">Review results and optionally flag for official verification with evidence.</p>
+
+        {error && <div className="bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">{error}</div>}
 
         <div className="flex gap-6 mb-8">
-          {/* Report Summary Left Column */}
-          <div className="w-1/3 bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col gap-3 text-xs">
-            <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-3 mb-1 text-sm">Report Summary</h3>
-            <div className="flex justify-between"><span className="text-gray-500">Parcel ID</span><span className="font-bold">{selectedParcel?.parcel_id || 'N/A'}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Sector</span><span>{selectedParcel?.sector || 'Unknown'}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">City</span><span>{selectedParcel?.city || 'Unknown'}</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Parcel Area</span><span>{selectedParcel?.area ? selectedParcel.area.toFixed(2) : 'N/A'} sq.m.</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Building Area (Inside)</span><span>{reportMetrics.house_area_m2 ? (reportMetrics.house_area_m2 - reportMetrics.outside_area_m2).toFixed(2) : 'N/A'} sq.m.</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Building Area (Outside)</span><span className="font-bold text-red-600">{reportMetrics.outside_area_m2 ? reportMetrics.outside_area_m2.toFixed(2) : '0.00'} sq.m.</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Outside Percentage</span><span className="font-bold text-red-600">{reportMetrics.outside_percentage ? reportMetrics.outside_percentage.toFixed(2) : '0.00'}%</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">IoU Score</span><span>{reportMetrics.iou ? reportMetrics.iou.toFixed(2) : 'N/A'}</span></div>
-            <div className="flex justify-between pt-2 border-t border-gray-100"><span className="text-gray-500 font-bold">Diagnosis</span><span className={`font-bold uppercase ${auditResult?.result === 'CLEAR' ? 'text-green-600' : 'text-red-600'}`}>{auditResult?.result || 'N/A'}</span></div>
+          {/* Left Column: Report Summary + Confidence */}
+          <div className="w-1/3 flex flex-col gap-4">
+            {/* Report Summary */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm flex flex-col gap-3 text-xs">
+              <h3 className="font-bold text-gray-900 border-b border-gray-100 pb-3 mb-1 text-sm">Report Summary</h3>
+              <div className="flex justify-between"><span className="text-gray-500">Parcel ID</span><span className="font-bold">{selectedParcel?.parcel_id || 'N/A'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Sector</span><span>{selectedParcel?.sector || 'Unknown'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">City</span><span>{selectedParcel?.city || 'Unknown'}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Parcel Area</span><span>{selectedParcel?.area ? selectedParcel.area.toFixed(2) : 'N/A'} sq.m.</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Building Area (Inside)</span><span>{reportMetrics.house_area_m2 ? (reportMetrics.house_area_m2 - reportMetrics.outside_area_m2).toFixed(2) : 'N/A'} sq.m.</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Building Area (Outside)</span><span className="font-bold text-red-600">{reportMetrics.outside_area_m2 ? reportMetrics.outside_area_m2.toFixed(2) : '0.00'} sq.m.</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">Outside Percentage</span><span className="font-bold text-red-600">{reportMetrics.outside_percentage ? reportMetrics.outside_percentage.toFixed(2) : '0.00'}%</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">IoU Score</span><span>{reportMetrics.iou ? reportMetrics.iou.toFixed(2) : 'N/A'}</span></div>
+              <div className="flex justify-between pt-2 border-t border-gray-100"><span className="text-gray-500 font-bold">Diagnosis</span><span className={`font-bold uppercase ${auditResult?.result === 'CLEAR' ? 'text-green-600' : 'text-red-600'}`}>{auditResult?.result || 'N/A'}</span></div>
+            </div>
+
+            {/* Spatial Verification Confidence */}
+            <div className="bg-blue-50 border border-blue-300 rounded-xl p-6 shadow-sm">
+              <p className="text-xs font-bold text-blue-900 mb-3 uppercase">Spatial Verification Confidence</p>
+              <div className="mb-4">
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-3xl font-bold text-blue-700">{confidence.score}</span>
+                  <span className="text-xs text-blue-600 font-semibold">/ 100</span>
+                </div>
+                <span className={`inline-block px-2.5 py-1 rounded text-xs font-bold ${
+                  confidence.level === 'HIGH'
+                    ? 'bg-red-100 text-red-700'
+                    : confidence.level === 'MEDIUM'
+                    ? 'bg-orange-100 text-orange-700'
+                    : 'bg-green-100 text-green-700'
+                }`}>
+                  {confidence.level} CONFIDENCE
+                </span>
+              </div>
+              <div className="bg-white rounded p-3 text-xs text-gray-700 space-y-1 border border-blue-200">
+                <p className="font-semibold text-gray-900 mb-1.5">Evidence Factors:</p>
+                {confidence.factors.map((factor, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <span className="text-blue-600 font-bold">•</span>
+                    <span>{factor}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* Styled PDF Document Preview Right Column */}
-          <div className="w-2/3 bg-white border border-gray-200 rounded-xl p-8 shadow-sm border-t-4 border-t-green-600">
+          {/* Center Column: PDF Preview */}
+          <div className="w-1/3 bg-white border border-gray-200 rounded-xl p-8 shadow-sm border-t-4 border-t-green-600">
             <div className="text-center border-b border-gray-200 pb-6 mb-6">
               <div className="flex justify-center items-center gap-2 mb-1">
                 <span className="text-lg font-bold">AeroBhumi<span className="text-green-600">AI</span></span>
@@ -634,9 +1114,87 @@ startxref
               <div className="flex justify-between py-1 pt-2 font-bold"><span className="text-gray-700">Diagnosis</span><span className={auditResult?.result === 'CLEAR' ? 'text-green-600' : 'text-red-600'}>{auditResult?.result || 'N/A'}</span></div>
             </div>
           </div>
+
+          {/* Right Column: Evidence Upload & Flag Button */}
+          <div className="w-1/3 flex flex-col gap-4">
+            {/* Evidence Snapshot Upload */}
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+              <p className="text-xs font-bold text-gray-900 mb-3 uppercase">Evidence Snapshot (Optional)</p>
+              
+              {!evidenceSnapshot ? (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-600 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleEvidenceUpload}
+                    className="hidden"
+                    id="evidence-upload"
+                  />
+                  <label htmlFor="evidence-upload" className="cursor-pointer block">
+                    <UploadCloud className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-gray-700 mb-0.5">Upload Conflict Photo</p>
+                    <p className="text-[11px] text-gray-500">Click to upload or drag</p>
+                  </label>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <div className="mb-3 bg-white rounded overflow-hidden border border-gray-200 max-h-32">
+                    <img
+                      src={evidenceSnapshot.dataUrl}
+                      alt="Evidence Preview"
+                      className="w-full h-32 object-cover"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-700 font-semibold mb-2 truncate">{evidenceSnapshot.fileName}</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setEvidenceSnapshot(null)}
+                      className="flex-1 px-2 py-1.5 bg-red-50 text-red-700 text-xs font-semibold rounded hover:bg-red-100 transition-colors"
+                    >
+                      Remove
+                    </button>
+                    <label htmlFor="evidence-replace" className="flex-1">
+                      <button
+                        className="w-full px-2 py-1.5 bg-gray-100 text-gray-700 text-xs font-semibold rounded hover:bg-gray-200 transition-colors"
+                        type="button"
+                        onClick={() => document.getElementById('evidence-replace')?.click()}
+                      >
+                        Replace
+                      </button>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleEvidenceUpload}
+                        className="hidden"
+                        id="evidence-replace"
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Flag for Verification Button */}
+            {auditResult?.result !== 'CLEAR' && (
+              <button
+                onClick={handleFlagForVerification}
+                disabled={flagging || !selectedParcelId || !buildCheckResult}
+                className="w-full px-4 py-3 bg-green-700 text-white rounded-lg font-bold text-sm hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              >
+                {flagging ? 'Flagging...' : 'Flag for Official Verification'}
+              </button>
+            )}
+
+            {auditResult?.result === 'CLEAR' && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-xs text-green-800">
+                <p className="font-semibold mb-1">No Conflicts Detected</p>
+                <p>Flagging is not available for clear results. The parcel is compliant.</p>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex justify-between">
+        <div className="flex justify-between mt-8">
           <button onClick={() => setStep('analyze')} className="px-6 py-2 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50">Back</button>
           <button 
             onClick={() => handleDownloadPDF(reportId)} 
