@@ -14,19 +14,28 @@ interface GovernmentCaseMapProps {
   selectedCase: any | null;
   mapView?: string;
   isProcessing?: boolean;
+  uploadedMap?: { dataUrl: string; fileName: string; fileSize: string; uploadTime: Date } | null;
+  conflictParcelIds?: string[]; // List of parcel IDs that have conflicts
 }
 
 export default function GovernmentCaseMap({ 
   selectedCase, 
   mapView = 'comparison',
-  isProcessing = false
+  isProcessing = false,
+  uploadedMap = null,
+  conflictParcelIds = ['P-009', 'P-010'] // Default conflict parcels
 }: GovernmentCaseMapProps) {
   const [governmentCoords, setGovernmentCoords] = useState<any[]>([]);
   const [observedCoords, setObservedCoords] = useState<any[]>([]);
   const [conflictCoords, setConflictCoords] = useState<any[]>([]);
   const [cadastralParcels, setCadastralParcels] = useState<any[]>([]);
 
+  // Always load cadastral parcels when component mounts or uploadedMap changes
   useEffect(() => {
+    // Always load all cadastral parcels - they should always be visible
+    setCadastralParcels(getCadastralParcels());
+    
+    // Load selected case geometry if a case is selected
     if (selectedCase) {
       const geometry = getCaseGeometry(selectedCase.parcel_id);
       
@@ -46,18 +55,18 @@ export default function GovernmentCaseMap({
       } else {
         setConflictCoords([]);
       }
-
-      // Load all cadastral parcels
-      setCadastralParcels(getCadastralParcels());
     }
-  }, [selectedCase]);
+  }, [selectedCase, uploadedMap]);
 
   const mapCenter = DEMO_GEOMETRY.center as [number, number];
 
-  if (!selectedCase) {
+  // Show map if either selectedCase exists OR map is uploaded
+  const shouldShowMap = !!selectedCase || !!uploadedMap;
+
+  if (!shouldShowMap) {
     return (
       <div className="w-full h-full bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500 text-sm">Select a case to view map</p>
+        <p className="text-gray-500 text-sm">Upload a map or select a case to view</p>
       </div>
     );
   }
@@ -100,69 +109,76 @@ export default function GovernmentCaseMap({
         )}
 
         {/* Render all cadastral parcels with labels */}
-        {cadastralParcels.map((parcel, idx) => (
-          <React.Fragment key={`parcel-group-${idx}`}>
-            {/* Parcel boundary polygon */}
-            <Polygon 
-              key={`parcel-${idx}`}
-              positions={parcel.coordinates}
-              pathOptions={{
-                color: '#999999',
-                weight: 1,
-                fillColor: '#f5f5f5',
-                fillOpacity: 0.3,
-                dashArray: null
-              }}
-            >
-              <Popup>
-                <div className="text-xs">
-                  <p className="font-bold">{parcel.parcel_id}</p>
-                  <p className="text-gray-600">{Math.round(parcel.area_m2)} m²</p>
-                </div>
-              </Popup>
-            </Polygon>
-            
-            {/* Parcel number label */}
-            {parcel.center && (
-              <Marker
-                key={`label-${idx}`}
-                position={parcel.center}
-                icon={L.divIcon({
-                  html: `<div style="
-                    background: transparent;
-                    border: none;
-                    text-align: center;
-                    font-size: 10px;
-                    font-weight: bold;
-                    color: #555555;
-                    text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
-                    pointer-events: none;
-                  ">${parcel.parcel_id.replace('P-', '')}</div>`,
-                  className: 'parcel-label',
-                  iconSize: [30, 16],
-                  iconAnchor: [15, 8]
-                })}
-              />
-            )}
-          </React.Fragment>
-        ))}
+        {cadastralParcels.map((parcel, idx) => {
+          const isConflictParcel = conflictParcelIds.includes(parcel.parcel_id);
+          const isMapUploaded = uploadedMap !== null && uploadedMap !== undefined; // Check if map has been uploaded
+          
+          return (
+            <React.Fragment key={`parcel-group-${idx}`}>
+              {/* Parcel boundary polygon */}
+              <Polygon 
+                key={`parcel-${idx}`}
+                positions={parcel.coordinates}
+                pathOptions={{
+                  color: isConflictParcel && isMapUploaded ? '#dc2626' : '#999999',
+                  weight: isConflictParcel && isMapUploaded ? 3 : 1,
+                  fillColor: isConflictParcel && isMapUploaded ? '#ef4444' : '#f5f5f5',
+                  fillOpacity: isConflictParcel && isMapUploaded ? 0.25 : 0.3,
+                  dashArray: null
+                }}
+              >
+                <Popup>
+                  <div className="text-xs">
+                    <p className="font-bold">{parcel.parcel_id}</p>
+                    <p className="text-gray-600">{Math.round(parcel.area_m2)} m²</p>
+                    {isConflictParcel && <p className="text-red-600 font-bold">⚠ CONFLICT AREA</p>}
+                  </div>
+                </Popup>
+              </Polygon>
+              
+              {/* Parcel number label */}
+              {parcel.center && (
+                <Marker
+                  key={`label-${idx}`}
+                  position={parcel.center}
+                  icon={L.divIcon({
+                    html: `<div style="
+                      background: transparent;
+                      border: none;
+                      text-align: center;
+                      font-size: 10px;
+                      font-weight: bold;
+                      color: ${isConflictParcel && isMapUploaded ? '#dc2626' : '#222222'};
+                      text-shadow: 1px 1px 3px rgba(255,255,255,0.9), -1px -1px 3px rgba(255,255,255,0.9), 1px -1px 3px rgba(255,255,255,0.9), -1px 1px 3px rgba(255,255,255,0.9);
+                      pointer-events: none;
+                      font-weight: 900;
+                    ">${parcel.parcel_id.replace('P-', '')}</div>`,
+                    className: 'parcel-label',
+                    iconSize: [30, 16],
+                    iconAnchor: [15, 8]
+                  })}
+                />
+              )}
+            </React.Fragment>
+          );
+        })}
 
-        {/* Government Record Boundary - Green (always show) */}
+        {/* Government Record Boundary - White (always show) */}
         {governmentCoords.length > 0 && (
           <Polygon 
             positions={governmentCoords}
             pathOptions={{
-              color: '#16a34a',
-              weight: 3,
-              fillColor: '#16a34a',
-              fillOpacity: mapView === 'satellite' ? 0.15 : 0.2,
+              color: '#ffffff',
+              weight: 2,
+              fillColor: '#ffffff',
+              fillOpacity: mapView === 'satellite' ? 0.1 : 0.15,
               dashArray: null,
               className: 'government-boundary'
             }}
           >
             <Popup>
               <div className="text-xs">
-                <p className="font-bold text-green-700">Government Record</p>
+                <p className="font-bold text-gray-900">Government Record</p>
                 <p className="text-gray-700">{selectedCase?.parcel_id}</p>
                 <p className="text-gray-600">{selectedCase?.registered_area_m2} m² (official)</p>
               </div>
@@ -170,28 +186,7 @@ export default function GovernmentCaseMap({
           </Polygon>
         )}
 
-        {/* Observed Boundary - Blue dashed (comparison/conflict views) */}
-        {observedCoords.length > 0 && (mapView === 'comparison' || mapView === 'conflict') && (
-          <Polygon 
-            positions={observedCoords}
-            pathOptions={{
-              color: '#2563eb',
-              weight: 2.5,
-              fillColor: '#60a5fa',
-              fillOpacity: 0.05,
-              dashArray: '6,4',
-              className: 'observed-boundary'
-            }}
-          >
-            <Popup>
-              <div className="text-xs">
-                <p className="font-bold text-blue-700">Observed Boundary</p>
-                <p className="text-gray-700">{selectedCase?.parcel_id}</p>
-                <p className="text-gray-600">{selectedCase?.observed_area_m2} m² (extracted)</p>
-              </div>
-            </Popup>
-          </Polygon>
-        )}
+        {/* Observed Boundary - REMOVED (no longer shown) */}
 
         {/* Conflict Area - Red highlight (conflict views) */}
         {conflictCoords.length > 0 && (mapView === 'conflict' || mapView === 'comparison') && (
@@ -256,38 +251,6 @@ export default function GovernmentCaseMap({
         </Marker>
       </MapContainer>
 
-      {/* Legend - Bottom Left */}
-      <div className="absolute bottom-4 left-4 bg-white border border-gray-300 rounded-lg p-3 shadow-lg text-xs z-40">
-        <p className="font-bold text-gray-900 mb-2">Legend</p>
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-green-600 border border-green-700"></div>
-            <span className="text-gray-700">Government Record</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-blue-400 border-2 border-blue-500 border-dashed"></div>
-            <span className="text-gray-700">Observed Boundary</span>
-          </div>
-          {conflictCoords.length > 0 && (
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-red-500 border border-red-600"></div>
-              <span className="text-gray-700">Conflict Area</span>
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 bg-gray-300 border border-gray-500"></div>
-            <span className="text-gray-700">Other Parcels</span>
-          </div>
-        </div>
-      </div>
-
-      {/* View indicator - Top Right */}
-      <div className="absolute top-4 right-4 bg-white border border-gray-300 rounded px-3 py-2 text-xs font-medium text-gray-700 z-40">
-        {mapView === 'satellite' && 'Satellite View'}
-        {mapView === 'cadastral' && 'Cadastral View'}
-        {mapView === 'comparison' && 'Comparison View'}
-        {mapView === 'conflict' && '⚠ Conflict Focus'}
-      </div>
     </div>
   );
 }

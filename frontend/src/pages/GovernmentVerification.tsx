@@ -76,26 +76,18 @@ export default function GovernmentVerification() {
   // When allGovernmentCases updates, check for new cases
   useEffect(() => {
     if (allGovernmentCases.length > 0) {
-      // If no case is selected, select the MOST RECENT case (highest index)
-      if (!selectedCase) {
-        const mostRecentCase = allGovernmentCases[allGovernmentCases.length - 1];
-        console.log('📝 No case selected, selecting most recent:', mostRecentCase.caseId || mostRecentCase.parcel_id);
-        setSelectedCase(mostRecentCase);
-      } else {
-        // If a case is selected, verify it still exists in the list
-        const stillExists = allGovernmentCases.find(c => 
-          c.caseId === selectedCase.caseId || 
-          (c.parcel_id === selectedCase.parcel_id && !selectedCase.caseId)
-        );
-        
-        if (!stillExists) {
-          console.log('📝 Selected case no longer exists, selecting most recent');
-          const mostRecentCase = allGovernmentCases[allGovernmentCases.length - 1];
-          setSelectedCase(mostRecentCase);
+      // If map is uploaded, auto-select the conflict case for P-009
+      // Otherwise, don't auto-select anything - let user choose
+      if (uploadedMap) {
+        console.log('📝 Map uploaded - auto-selecting conflict case (P-009)');
+        const conflictCase = allGovernmentCases.find(c => c.parcel_id === 'P-009');
+        if (conflictCase) {
+          console.log('✅ Found conflict case P-009, selecting it');
+          setSelectedCase(conflictCase);
         }
       }
     }
-  }, [allGovernmentCases]);
+  }, [allGovernmentCases, uploadedMap]);
 
   const loadCases = () => {
     console.log('=== loadCases called (government) ===');
@@ -561,6 +553,7 @@ export default function GovernmentVerification() {
                   selectedCase={selectedCase} 
                   mapView={mapView}
                   isProcessing={isProcessing}
+                  uploadedMap={uploadedMap}
                 />
               )}
             </div>
@@ -569,12 +562,8 @@ export default function GovernmentVerification() {
             <div className="border-t border-[#2a2a2a] bg-[#2a2a2a] px-4 py-2.5 text-xs">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-[#0066ff]"></div>
+                  <div className="w-3 h-3 rounded-sm bg-white border border-gray-400"></div>
                   <span className="text-gray-300 font-semibold">Government Record</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-[#00d4ff]" style={{borderStyle: 'dashed'}}></div>
-                  <span className="text-gray-300 font-semibold">Observed Boundary</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-sm bg-[#ff3333]"></div>
