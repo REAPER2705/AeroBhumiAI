@@ -25,6 +25,7 @@ export interface BuildCheckResult {
     outside_percentage: number
   }
   boundary_status: string
+  encroachment_geometry?: any
 }
 
 export interface AuditAnalysisResult {
@@ -34,4 +35,23 @@ export interface AuditAnalysisResult {
   problem: string
   recommended_action: string
   verification_note?: string
+}
+
+export interface CitizenCase {
+  caseId: string
+  parcelId: string
+  auditId: string
+  conflictResult: string
+  affectedAreaM2: number
+  outsidePercentage: number
+  reason: string
+  evidenceDataUrl?: string
+  evidenceFileName?: string
+  spatialConfidence: number
+  confidenceLevel: 'HIGH' | 'MEDIUM' | 'LOW'
+  confidenceFactors: string[]
+  status: 'FLAGGED' | 'UNDER_REVIEW' | 'FIELD_VERIFICATION_REQUIRED' | 'VERIFIED' | 'RESOLVED'
+  createdAt: string
+  updatedAt: string
+  governmentNotes?: string
 }
